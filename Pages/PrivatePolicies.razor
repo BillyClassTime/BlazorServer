@@ -1,0 +1,170 @@
+@using System.Globalization
+@page "/privacy"
+@layout Minimallayout
+@inject IJSRuntime JsRuntime
+@code {
+    // Configure your company details here
+    private string CompanyName => "Domotica Brotons";
+    private string CompanyEmail => "domoticabrotons@billyclastime.com";
+    private string CompanyAddress => "C/ Monasterios de Suso y Yuso,23 28049 Madrid, España";
+    private string CompanyPhone => "+34 912 333 059";
+    private string LastUpdate => DateTime.UtcNow.ToString("dd MMMM yyyy", new CultureInfo("es-ES"));
+}
+<div class="container my-5">
+    <div class="row">
+        <div class="col-lg-10 offset-lg-1">
+            <h1>Política de privacidad</h1>
+            <p><strong>Última actualización:</strong> 5/11/2025</p>
+
+            <p>
+                Esta Política de Privacidad explica cómo <strong>@CompanyName</strong> recoge, utiliza, comparte y
+                protege la información
+                personal
+                cuando utilizas nuestros sitios web, aplicaciones y servicios, y qué derechos tienes sobre tus datos. Si
+                tienes
+                preguntas, puedes contactarnos en <a href="mailto:@CompanyEmail">@CompanyEmail</a>.
+            </p>
+
+            <h2 id="summary">Resumen de puntos clave</h2>
+            <p>
+                Este resumen recoge los aspectos esenciales de nuestra política de privacidad. Te recomendamos leer la
+                política completa para comprender todos los detalles.
+            </p>
+            <ul class="list-group mb-4">
+                <li class="list-group-item">
+                    <a href="#" @onclick:preventDefault='true' @onclick='() => NavigateToAnchor("collect")'>1. Qué
+                        información recogemos</a>
+                </li>
+                <li class="list-group-item">
+                    <a href="#" @onclick:preventDefault='true' @onclick='() => NavigateToAnchor("process")'>2. Cómo
+                        procesamos tu información</a>
+                </li>
+                <li class="list-group-item">
+                    <a href="#" @onclick:preventDefault='true' @onclick='() => NavigateToAnchor("share")'>3. Con quién
+                        compartimos tu información</a>
+                </li>
+                <li class="list-group-item">
+                    <a href="#" @onclick:preventDefault='true' @onclick='() => NavigateToAnchor("retention")'>4.
+                        Conservación de los datos</a>
+                </li>
+                <li class="list-group-item">
+                    <a href="#" @onclick:preventDefault='true' @onclick='() => NavigateToAnchor("security")'>5.
+                        Seguridad</a>
+                </li>
+                <li class="list-group-item">
+                    <a href="#" @onclick:preventDefault='true' @onclick='() => NavigateToAnchor("minors")'>6.
+                        Menores</a>
+                </li>
+                <li class="list-group-item">
+                    <a href="#" @onclick:preventDefault='true' @onclick='() => NavigateToAnchor("rights")'>7. Tus
+                        derechos</a>
+                </li>
+                <li class="list-group-item">
+                    <a href="#" @onclick:preventDefault='true' @onclick='() => NavigateToAnchor("updates")'>8.
+                        Actualizaciones</a>
+                </li>
+                <li class="list-group-item">
+                    <a href="#" @onclick:preventDefault='true' @onclick='() => NavigateToAnchor("contact")'>9. ¿Cómo
+                        contactarnos?</a>
+                </li>
+                <li class="list-group-item">
+                    <a href="#" @onclick:preventDefault='true'
+                        @onclick='() => NavigateToAnchor("review-update-delete")'>10. ¿Cómo revisar, actualizar o
+                        eliminar tus datos?</a>
+                </li>
+            </ul>
+
+            <h2 class="h4 text-primary mt-5" id="collect">1. Qué información recogemos</h2>
+            <ul class="list-unstyled ms-3">
+                <li>• Datos de identificación: nombre, correo electrónico, teléfono (solo si los facilitas en
+                    formularios de contacto).</li>
+                <li>• Datos de uso básicos: dirección IP y navegación mínima necesaria para el funcionamiento del sitio.
+                </li>
+                <li>• No recogemos datos sensibles (salud, religión, orientación sexual, etc.).</li>
+            </ul>
+
+            <h2 class="h4 text-primary mt-5" id="process">2. Cómo procesamos tu información</h2>
+            <p>Usamos tus datos únicamente para:</p>
+            <ul class="list-unstyled ms-3">
+                <li>• Responder a tus consultas o solicitudes de contacto.</li>
+                <li>• Prestar los servicios que nos solicites.</li>
+                <li>• Cumplir con nuestras obligaciones legales.</li>
+            </ul>
+
+            <h2 class="h4 text-primary mt-5" id="share">3. Con quién compartimos tu información</h2>
+            <p>
+                No compartimos tus datos con terceros con fines comerciales. Únicamente podrán acceder a ellos:
+            </p>
+            <ul class="list-unstyled ms-3">
+                <li>• Proveedores técnicos imprescindibles (ej. servicio de hosting).</li>
+                <li>• Autoridades públicas cuando la ley lo requiera.</li>
+            </ul>
+
+            <h2 class="h4 text-primary mt-5" id="retention">4. Conservación de los datos</h2>
+            <p>
+                Conservamos tus datos solo el tiempo necesario para atender tu solicitud o cumplir con obligaciones
+                legales.
+                Posteriormente serán eliminados de forma segura.
+            </p>
+
+            <h2 class="h4 text-primary mt-5" id="security">5. Seguridad</h2>
+            <p>
+                Aplicamos medidas técnicas y organizativas razonables para proteger tu información.
+                No obstante, ningún sistema es 100% seguro.
+            </p>
+
+            <h2 class="h4 text-primary mt-5" id="minors">6. Menores</h2>
+            <p>
+                Nuestros servicios no están dirigidos a menores de 18 años. Si detectamos datos de un menor, los
+                eliminaremos de inmediato.
+            </p>
+
+            <h2 class="h4 text-primary mt-5" id="rights">7. Tus derechos</h2>
+            <p>
+                Puedes ejercer tus derechos de acceso, rectificación, supresión, limitación, portabilidad y oposición
+                escribiendo a <a href="mailto:@CompanyEmail">@CompanyEmail</a>.
+            </p>
+
+            <h2 class="h4 text-primary mt-5" id="updates">8. Actualizaciones</h2>
+            <p>
+                Esta política puede actualizarse para reflejar cambios legales o técnicos. Publicaremos la nueva versión
+                en esta misma página.
+            </p>
+
+            <h2 class="h4 text-primary mt-5" id="contact">9. ¿Cómo contactarnos?</h2>
+            <p>
+                @CompanyName — @CompanyAddress<br />
+                Correo: <a href="mailto:@CompanyEmail">@CompanyEmail</a> — Teléfono: @CompanyPhone
+            </p>
+
+            <h2 class="h4 text-primary mt-5" id="review-update-delete">10. ¿Cómo revisar, actualizar o eliminar tus
+                datos?</h2>
+            <p>
+                Puedes solicitar acceso, actualización o eliminación de tu información personal enviando una solicitud a
+                <a href="mailto:@CompanyEmail">@CompanyEmail</a>. También puedes usar cualquier formulario habilitado en
+                el sitio.
+            </p>
+
+            <hr />
+
+            <p class="mt-4">
+                <button class="btn btn-outline-info btn-sm me-2" @onclick:preventDefault="true"
+                    @onclick='() => NavigateToAnchor("summary")'> 🔙 Volver al resumen
+                </button>
+
+                <button class="btn btn-outline-info btn-sm me-2" @onclick:preventDefault="true"
+                    @onclick='() => NavigateToAnchor("collect")'> ⬆️ Ir al inicio de la política
+                </button>
+            </p>
+
+
+        </div>
+    </div>
+</div>
+
+@code {
+    private async Task NavigateToAnchor(string elementId)
+    {
+        await JsRuntime.InvokeVoidAsync("navigateToAnchor", elementId);
+    }
+}

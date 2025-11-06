@@ -1,0 +1,66 @@
+@using BlazorServer.Services.Interfaces
+@inject IJSRuntime JsRuntime
+@inject IAppVersionInfo AppVersionInfo
+@inject IConfiguration Configuration    
+
+
+<!-- Footer-->
+<footer class="footer bg-light">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-6 h-100 text-center text-lg-start my-auto">
+                <ul class="list-inline mb-2">
+                    <li class="list-inline-item"><NavLink href="/#quienesSomos">¿Quiénes somos?</NavLink></li>
+                    <li class="list-inline-item">⋅</li>
+                    <li class="list-inline-item"><NavLink href="/#contacto">Contacto</NavLink></li>
+                    <li class="list-inline-item">⋅</li>
+                    <li class="list-inline-item"><NavLink href="/terms">Terminos of uso</NavLink></li>
+                    <li class="list-inline-item">⋅</li>
+                    <li class="list-inline-item"><NavLink href="/privacy">Políticas de privacidad</NavLink></li>
+                </ul>
+                <p class="text-muted small mb-0">
+                    <i class="bi bi-cpu"></i> Powered by <strong>.NET @FrameworkVersion</strong> |
+                    <i class="bi bi-git"></i> Commit: <code>@GitHub</code> |
+                    <i class="bi bi-hammer"></i> Build: <code>@BuildNumber</code>
+                </p>
+            </div>
+            <div class="col-lg-6 h-100 text-center text-lg-end my-auto">
+                <ul class="list-inline mb-0">
+                    <li class="list-inline-item me-4">
+                        <a href="https://www.facebook.com/domoticabrotons" target="_blank"><i
+                                class="bi-facebook fs-3"></i></a>
+                    </li>
+                    <li class="list-inline-item me-4">
+                        <a href="https://twitter.com/domoticbrotons" target="_blank"><i class="bi-twitter fs-3"></i></a>
+                    </li>
+                    <li class="list-inline-item me-4">
+                        <a href="https://www.instagram.com/brotonssmartlife/" target="_blank"><i
+                                class="bi-instagram fs-3"></i></a>
+                    </li>
+                    <li class="list-inline-item me-4">
+                        <a href="https://www.youtube.com/channel/UCMFk5oVqTJs16zYQIrLKDcA" target="_blank"><i
+                                class="bi-youtube fs-3"></i></a>
+                    </li>
+
+                    <li class="list-inline-item me-4">
+                        <a href="https://www.linkedin.com/company/brot%C3%B3ns-dom%C3%B3tica/" target="_blank"><i
+                                class="bi-linkedin fs-3"></i></a>
+                    </li>
+
+                </ul>
+            </div>
+        </div>
+    </div>
+</footer>
+
+@code {
+    private async Task NavigateToAnchor(string elementId)
+    {
+        await JsRuntime.InvokeVoidAsync("navigateToAnchor", elementId);
+    }
+    private MarkupString FrameworkVersion => new MarkupString($"<strong>{Environment.Version.ToString()}</strong>");
+    private string Anno => DateTime.Now.Year.ToString();
+    private MarkupString GitHub => new MarkupString($" and deployed from commit <a href='{Configuration["GitHubCommitUrl"]}/commit/{AppVersionInfo.GitHash}'>{AppVersionInfo.ShortGitHash}</a>");
+    private MarkupString BuildNumber => new MarkupString($" via build <a href='{Configuration["AzureDevopsBuildUrl"]}/_build/results?buildId={AppVersionInfo.BuildId}&view=results'>{AppVersionInfo.BuildNumber}</a>");
+
+}

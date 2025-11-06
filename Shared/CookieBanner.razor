@@ -1,0 +1,39 @@
+@if (Visible)
+{
+    <div class="alert alert-dark fixed-bottom mb-0 d-flex justify-content-between align-items-center" role="alert"
+        style="z-index:1050;">
+        <span class="text-light">
+            Usamos cookies para mejorar tu experiencia.
+            <a href="/politica-cookies" class="alert-link">Más información</a>.
+        </span>
+        <span>
+            <button class="btn btn-success btn-sm me-2" @onclick="AcceptCookies">Aceptar</button>
+            <button class="btn btn-secondary btn-sm" @onclick="RejectCookies">Rechazar</button>
+        </span>
+    </div>
+}
+@code {
+    //[Parameter] public bool Visible { get; set; }
+    private void AcceptCookies()
+    {
+        // Guardar preferencia en localStorage
+        JS.InvokeVoidAsync("localStorage.setItem", "cookiesAccepted", "true");
+        HideBanner();
+    }
+
+    private void RejectCookies()
+    {
+        JS.InvokeVoidAsync("localStorage.setItem", "cookiesAccepted", "false");
+        HideBanner();
+    }
+
+    private void HideBanner()
+    {
+        Visible = false;
+        StateHasChanged();
+    }
+
+    private bool Visible = true;
+
+    [Inject] private IJSRuntime JS { get; set; } = default!;
+}

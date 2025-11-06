@@ -1,0 +1,31 @@
+@inject IJSRuntime JsRuntime
+
+<!-- Masthead-->
+<header class="masthead" id="domoticaDigitalHome">
+    <div class="container px-4 px-lg-5 h-100">
+        <div class="row gx-4 gx-lg-5 h-100 align-items-center justify-content-center text-center">
+            <div class="col-lg-8 align-self-end">
+                <h1 class="text-white font-weight-bold">DOMÓTICA PARA EL HOGAR DIGITAL</h1>
+                <hr class="divider" />
+            </div>
+            <div class="col-lg-8 align-self-baseline">
+                <h4 class="text-white font-weight-bold mb-2">Libre de contaminación electromagnética</h4>
+                <p class="text-white mb-5">En Domótica Brotons lo llevamos de la mano hacia un hogar inteligente,
+                    como Silver Partner de LOXONE, contamos con todas las herramientas necesarias para asesorarle y
+                    dejar su casa a un nivel de automatización que se ajuste a sus necesidades de confort,
+                    seguridad, control y mínima contaminación electromagnética. El hogar inteligente ayuda en la
+                    gestión y eficiencia energética, provee seguridad y control, sin saturar la casa de elementos
+                    con ondas de radio (via wifi) y con el mínimo de obra.
+                </p>
+                <a class="btn btn-primary btn-xl"  href="#" @onclick:preventDefault='true' @onclick='()=> NavigateToAnchor("servicios")'>¿Que Ofrecemos?</a>
+            </div>
+        </div>
+    </div>
+</header>
+
+@code {
+    private async Task NavigateToAnchor(string elementId)
+    {
+        await JsRuntime.InvokeVoidAsync("navigateToAnchor", elementId);
+    }
+}

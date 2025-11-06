@@ -1,0 +1,167 @@
+@using BlazorServer.Services
+@using System.ComponentModel.DataAnnotations
+@inject EmailServiceGraph EmailServiceGraph
+<!-- Contact-->
+<section class="page-section masthead" id="contacto">
+    <div class="container px-4 px-lg-5">
+        <div class="row gx-4 gx-lg-5 justify-content-center">
+            <div class="col-lg-8 col-xl-6 text-center text-white">
+                <h2 class="mt-0">Contacto</h2>
+                <hr class="divider" />
+                <p class=" mb-5">¿Quieres saber más? Contacta con Domótica BROTONS y te informaremos detalladamente
+                </p>
+            </div>
+        </div>
+        <div class="row gx-4 gx-lg-5 justify-content-center mb-5">
+            <div class="col-lg-6">
+                <EditForm Model="@formData" OnValidSubmit="HandleSubmit">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary />
+
+                    <div class="form-floating mb-3">
+                        <InputText class="form-control" id="name" placeholder="Enter your name..."
+                            @bind-Value="formData.Name" />
+                        <label for="name">Full name</label>
+                        <ValidationMessage For="@(() => formData.Name)" />
+                    </div>
+
+                    <div class="form-floating mb-3">
+                        <InputText class="form-control" id="email" type="email" placeholder="name@example.com"
+                            @bind-Value="formData.Email" />
+                        <label for="email">Email address</label>
+                        <ValidationMessage For="@(() => formData.Email)" />
+                    </div>
+
+                    <div class="form-floating mb-3">
+                        <InputText class="form-control" id="phone" type="tel" placeholder="(123) 456-7890"
+                            @bind-Value="formData.Phone" />
+                        <label for="phone">Phone number</label>
+                        <ValidationMessage For="@(() => formData.Phone)" />
+                    </div>
+
+                    <div class="form-floating mb-3">
+                        <InputTextArea class="form-control" id="message" style="height: 10rem"
+                            placeholder="Enter your message here..." @bind-Value="formData.Message" />
+                        <label for="message">Message</label>
+                        <ValidationMessage For="@(() => formData.Message)" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-light">@formData.CaptchaQuestion</label>
+                        <input type="text" class="form-control bg-dark text-light border-secondary" @bind="formData.UserAnswer" />
+                        <div class="form-text text-light">Resuelve la operación para confirmar que no eres un bot.</div>
+                        @if (!string.IsNullOrEmpty(captchaError))
+                        {
+                            <div class="text-danger">@captchaError</div>
+                        }
+                        else
+                        {
+                            <div class="" ></div>
+                        }
+                    </div>
+                    <div class="d-grid">
+                        <button class="btn btn-primary btn-xl" disabled="@messageSent" type="submit">Submit</button>
+                    </div>
+                    @if (!string.IsNullOrEmpty(statusMessage))
+                    {
+                        <div class="mt-3 alert alert-info">@statusMessage</div>
+                    }
+                </EditForm>
+            </div>
+        </div>
+        <div class="row gx-4 gx-lg-5 justify-content-center">
+            <div class="col-lg-4 text-center mb-5 mb-lg-0">
+                <i class="bi bi-telephone-fill fs-2 mb-3 text-primary"></i>
+                <p class="mb-1 text-white">Llámanos al</p>
+                <a href="tel:+34912333059" class="btn btn-outline-primary btn-lg">
+                    +34 912 333 059
+                </a>
+                <p class="small text-white mt-2">Atención de Lunes a Jueves, 10:00 hasta la 15:00</p>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+@code {
+    private FormData formData = new();
+    private string? captchaError;
+    private string? statusMessage;
+    private bool messageSent = false;
+
+    public async Task HandleSubmit()
+    {
+        // marcar que se ha enviado el mensaje para deshabilitar el botón
+        messageSent = true;
+        // 1) Validación del captcha
+        if (!int.TryParse(formData.UserAnswer, out var userValue) || userValue != formData.CaptchaAnswer)
+        {
+            captchaError = "Captcha incorrecto. Inténtalo de nuevo.";
+            // Regenerar nueva pregunta para evitar reintentos automáticos
+            GenerateCaptcha();
+            StateHasChanged();
+            messageSent = false; // permitir reintento
+            return;
+        }
+
+        // si captcha error no es null, dejarlo como null, si no, mantener el valor
+        captchaError = captchaError == null ? null : captchaError;
+
+        try {
+            // Aquí decides qué hacer: enviar correo, guardar en fichero, etc.
+            // await EmailService.SendAsync(formData.Email!, "Nuevo mensaje", formData.Message!);
+            await EmailServiceGraph.SendAsync(to: formData.Email!,"Nuevo mensaje",$"Enviado desde: {formData.Email!} \n {formData.Name} \n{formData.Phone} \n {formData.Message!}");
+            formData = new FormData(); // reset form
+            statusMessage = "Mensaje enviado correctamente. Gracias por contactar con nosotros.";
+            GenerateCaptcha(); // nueva pregunta captcha    
+            captchaError = null; // limpiar error captcha si lo había
+            
+        }
+        catch (Exception ex)
+        {
+            statusMessage = "Error enviando el mensaje. Por favor, inténtalo de nuevo más tarde.";
+            Console.WriteLine("Error enviando el correo: " + ex.Message);
+        }
+    
+    }
+
+    public class FormData
+    {
+        [Required] public string? Name { get; set; }
+        [Required, EmailAddress] public string? Email { get; set; }
+        [Required] public string? Phone { get; set; }
+        [Required] public string? Message { get; set; }
+
+        // Captcha
+        public string CaptchaQuestion { get; set; } = "";
+        public int CaptchaAnswer { get; set; }  // la respuesta correcta
+        public string UserAnswer { get; set; } = ""; // lo que escribe el usuario
+    }
+
+     protected override void OnInitialized()
+    {
+        GenerateCaptcha();
+    }
+
+private void GenerateCaptcha()
+{
+    var rnd = new Random();
+    var a = rnd.Next(2, 9);
+    var b = rnd.Next(2, 9);
+    var op = rnd.Next(0, 2); // 0 suma, 1 resta
+
+    if (op == 0)
+    {
+        formData.CaptchaQuestion = $"¿Cuánto es {a} + {b}?";
+        formData.CaptchaAnswer = a + b;
+    }
+    else
+    {
+        if (a < b) (a, b) = (b, a); // evitar negativos
+        formData.CaptchaQuestion = $"¿Cuánto es {a} - {b}?";
+        formData.CaptchaAnswer = a - b;
+    }
+
+    formData.UserAnswer = "";
+}
+
+}
