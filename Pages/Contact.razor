@@ -2,6 +2,8 @@
 @using BlazorServer.Models
 @using System.ComponentModel.DataAnnotations
 @using BlazorServer.Services.Interfaces
+@using Microsoft.Extensions.Logging
+@inject ILogger<Contact> Logger
 @inject ICaptchaService CaptchaService
 @inject EmailServiceGraph EmailServiceGraph
 <!-- Contact-->
@@ -128,11 +130,12 @@
             formData = new FormDataModel(); // reset form
             statusMessage = "Mensaje enviado correctamente. Gracias por contactar con nosotros.";
             SetNewCaptcha();
+            Logger.LogInformation("Contacto form submitted successfully by {Email}", formData.Email);
         }
         catch (Exception ex)
         {
             statusMessage = "Error enviando el mensaje. Por favor, inténtalo de nuevo más tarde.";
-            Console.WriteLine("Error enviando el correo: " + ex.Message);
+            Logger.LogError(ex, "Error sending contact form email for {Email}", formData.Email);    
         }
 
     }

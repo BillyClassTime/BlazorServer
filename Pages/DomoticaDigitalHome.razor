@@ -1,5 +1,6 @@
+@using Microsoft.Extensions.Logging
+@inject ILogger<DomoticaDigitalHome> Logger
 @inject IJSRuntime JsRuntime
-
 <!-- Masthead-->
 <header class="masthead" id="domoticaDigitalHome">
     <div class="container px-4 px-lg-5 h-100">
@@ -24,6 +25,10 @@
 </header>
 
 @code {
+    protected override void OnInitialized()
+    {
+        Logger.LogInformation("DomoticaDigitalHome component initialized.");
+    }
     private async Task NavigateToAnchor(string elementId)
     {
         await JsRuntime.InvokeVoidAsync("navigateToAnchor", elementId);
