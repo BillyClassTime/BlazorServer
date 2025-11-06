@@ -1,6 +1,6 @@
 # Desarrollo de una aplicación Blazor desde cero
 
-
+## 1. Estrategia preliminar
 
 1. **Define la estructura de tu aplicación**: Decide qué páginas o componentes necesitarás y cómo se relacionarán entre sí. Crea archivos `.razor` para cada uno de estos componentes en la carpeta `Pages` o `Shared` según corresponda.
 2. **Crea tus componentes**: En cada archivo `.razor`, define el marcado HTML y la lógica de tu componente. Puedes usar la sintaxis de Razor para crear componentes interactivos.
@@ -25,7 +25,7 @@
 
 
 
-### Entendiendo `_Host.cshtml`
+### 1.1 Entendiendo `_Host.cshtml`
 
 `_Host.cshtml` es donde tenemos el <html><body></body></html> que incluye en `App` para que todas las siguientes páginas rendericen alli. (Y se conversve un estilo único en toda la web app),
 
@@ -113,7 +113,7 @@
 
 ```
 
-### NavBar
+### 1.2 NavBar
 
 ```html
 <ul class="navbar-nav ms-auto my-2 my-lg-0">
@@ -133,7 +133,7 @@
 <li class="nav-item"><a class="nav-link" href="#contacto">Contacto</a></li>
 ```
 
-### Index.razor
+### 1.3 Index.razor
 
 ```html
 @page "/"
@@ -163,14 +163,14 @@
 <Contact />
 ```
 
-# footer better
+### 1.4 footer better
 
 ```c#
 output.Content.SetHtmlContent($" via build {appVersionInfo.BuildNumber}");
 			output.Content.SetHtmlContent($"< a href = 'https://dev.azure.com/BillyClassTime/BillyClassTimeBlog/_build/results?buildId={appVersionInfo.BuildId} &view=results' > {appVersionInfo.BuildNumber} </ a >");
 ```
 
-## Refactorizar para cumplimiento SOLID
+## 2. Refactorizar para cumplimiento SOLID
 
 Se ha detectado que la mayor lógica de negocio la lleva el componente `Contact.razor` pues recibe los dato para contactar, se valida, se realiza un `Captcha`y se envía el correo de confirmación y de almacenamiento de la solicitud.
 
@@ -181,7 +181,7 @@ Plan para mejorar la organización y cumplir SOLID:
 - [x] **Crear un ViewModel**: Usar un modelo para el formulario y delegar la validación.
 - [x] **Mantener el componente Razor solo para UI y coordinación**.
 
-## Instrumentando la aplicación
+## 3. Instrumentando la aplicación
 
 Instrumentar la aplicación y cumplir con buenas prácticas en .NET 9 y C# 13.
 
@@ -191,7 +191,259 @@ Usamos el nuevo logging integrado en lugar de `Console.WriteLine`. Inyectamos `I
 - El tipo `ILogger<NOMBRECOMPONENTERAZOR>` se inyecta automáticamente por DI.
 - El nombre del componente (`Contact`) debe coincidir con el nombre de tu clase Razor.
 
-## Deployment to Azure
+## 4. Plan de pruebas
+
+Toda aplicación antes de dejar los entornos de desarrollo debe ser rigurosamente probada, con las herramientas modernas, podemos realizar nuestras **pruebas unitarias y de integración** para componentes Blazor, usando **bUnit** (unit tests de componentes), **xUnit** (unit tests generales) y **Playwright** (end-to-end UI tests). 
+
+Estas pruebas deben ser el preambulo para definir la `CI/CD` antes del despliegue a pre-producción y producción.
+
+1. **Pruebas unitarias (xUnit)**
+   - Servicios (ej: Email, Captcha, lógica de negocio).
+   - Modelos y validaciones.
+2. **Pruebas de componentes (bUnit)**
+   - Renderizado y comportamiento de cada página/componente (no solo Contact).
+   - Interacción entre componentes.
+3. **Pruebas end-to-end (Playwright)**
+   - Flujos completos de usuario: navegación, interacción, envío de formularios, mensajes, etc.
+   - Pruebas de accesibilidad y visuales.
+
+### 4.1 Estructura de carpetas
+
+```powershell
+BlazorServer/
+│
+├── BlazorServer/        # Proyecto principal
+├── BlazorServer.Tests/  # Proyecto de pruebas unitarias (xUnit, bUnit)
+├── BlazorServer.E2E/    # Proyecto de pruebas end-to-end (Playwright)
+```
+
+### 4.2 Proyecto de pruebas unitarias y de componentes
+
+**BlazorServer.Tests**
+
+- Frameworks: `xUnit`, `bUnit`, `Moq` (para mocks)
+- Pruebas de servicios, modelos y componentes
+
+**Ejemplo de estructura interna:**
+
+```powershell
+BlazorServer.Tests/
+│
+├── Services/       # Pruebas de servicios (Captcha, Email, etc.)
+├── Models/         # Pruebas de modelos y validaciones
+├── Components/     # Pruebas de componentes Blazor (Contact, Home, etc.)
+│   └── ContactTests.cs
+│   └── HomeTests.cs
+│   └── ...
+└── TestUtils/      # Utilidades y helpers para pruebas
+```
+
+
+
+### **4.2 Proyecto de pruebas end-to-end**
+
+**BlazorServer.E2E**
+
+- Framework: `Playwright`
+- Pruebas de flujos completos de usuario, navegación, accesibilidad, etc.
+
+**Ejemplo de estructura interna:**
+
+```powershell
+BlazorServer.E2E/
+│
+├── ContactFormTests.cs
+├── NavigationTests.cs
+├── AccessibilityTests.cs
+└── ...
+```
+
+------
+
+### **4.3 Configuración y dependencias**
+
+- Agregar los siguientes paquetes NuGet:
+  - `xunit`
+  - `bunit`
+  - `Moq`
+  - `Microsoft.Playwright`
+- Se configura los proyectos de prueba para que referencien el proyecto principal (`BlazorServer`).
+
+#### 4.3.1 Creación de la estructura de proyectos
+
+En la solución Blazor (`BlazorServer.sln`),  se añade dos proyectos nuevos:
+
+```powershell
+dotnet new xunit -n BlazorServer.Tests
+dotnet new mstest -n BlazorServer.E2E   # aunque aquí usaremos Playwright, se puede usar xUnit también
+```
+
+Después, ajusta nombres para mantener la convención:
+
+```powershell
+mv BlazorServer.E2E BlazorServer.E2E/
+```
+
+Y se añade referencias al proyecto principal:
+
+```powershell
+dotnet add BlazorServer.Tests reference BlazorServer
+dotnet add BlazorServer.E2E reference BlazorServer
+```
+
+### 4.4 Instalación y configuración de los proyectos de prueba
+
+#### 4.4.1 Configuración de `BlazorServer.Tests` (xUnit, bUnit, Moq)
+
+Este proyecto manejará tanto las pruebas de lógica de negocio (xUnit/Moq) como las pruebas de componentes Blazor (bUnit).
+
+| **Paquete**                           | **Propósito**                                                | **Comando a Ejecutar**                         |
+| ------------------------------------- | ------------------------------------------------------------ | ---------------------------------------------- |
+| `xunit` y `xunit.runner.visualstudio` | Framework principal para unit tests y su integración con VS. | `dotnet add BlazorServer.Tests package xunit`  |
+| `Microsoft.NET.Test.Sdk`              | Base para ejecutar tests en .NET.                            | (Generalmente ya incluido en `xunit` template) |
+| `bunit` (y dependencias)              | Testing específico para componentes Blazor.                  | `dotnet add BlazorServer.Tests package bunit`  |
+| `Moq`                                 | Creación de objetos simulados (mocks) para servicios.        | `dotnet add BlazorServer.Tests package Moq`    |
+
+Resumen de los comandos:
+```powerhell
+# 1. Instalar bUnit (ya trae dependencias clave)
+dotnet add BlazorServer.Tests package bunit --version 1.25.1 
+
+# 2. Instalar Moq para simular servicios
+dotnet add BlazorServer.Tests package Moq --version 4.20.70 
+
+# 3. Asegurar el Test Runner de xUnit (si no estaba ya)
+dotnet add BlazorServer.Tests package xunit.runner.visualstudio --version 2.5.7
+```
+
+
+
+#### 4.4.2 Configuración de `BlazorServer.E2E` (Playwright)
+
+Para las pruebas End-to-End, usaremos el *binding* de Playwright para .NET.
+
+| **Paquete**                                                  | **Propósito**                                                | **Comando a Ejecutar**                                       |
+| ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
+| `Microsoft.Playwright.MSTest` o `Microsoft.Playwright.NUnit` | Playwright para .NET (usa su propio test runner o se integra con xUnit, NUnit, o MSTest). | `dotnet add BlazorServer.E2E package Microsoft.Playwright.NUnit --version 1.41.2` (Usaremos NUnit como base de E2E por su simplicidad con Playwright, si usaste `mstest` inicialmente, podemos usar el *runner* de MSTest también). |
+
+Resumen de los comandos
+
+```powershell
+# 1. Instalar la librería de Playwright (Aquí usamos NUnit, puedes cambiar a xUnit si lo prefieres)
+dotnet add BlazorServer.E2E package Microsoft.Playwright.NUnit --version 1.41.2
+
+# 2. Instalar la herramienta CLI de Playwright globalmente
+dotnet tool install --global Microsoft.Playwright.CLI
+
+# 3. Inicializar Playwright (Descarga los binarios de los navegadores)
+playwright install
+```
+
+#### 4.4.3 Asegurar las Referencias
+
+El paso más importante es asegurar que los proyectos de prueba puedan ver el código y los componentes del proyecto principal.
+
+```powershell
+# Referencia al proyecto principal para los Unit Tests (lógica de negocio y componentes)
+dotnet add BlazorServer.Tests reference BlazorServer/BlazorServer.csproj
+
+# Referencia al proyecto principal para los E2E Tests (necesario si se quiere probar el servidor en ejecución)
+dotnet add BlazorServer.E2E reference BlazorServer/BlazorServer.csproj
+```
+
+## 5. Desarrollando las pruebas
+
+### 5.1 Probar los Servicios (xUnit + Moq)
+
+En `BlazorServer.Tests/Services/EmailServiceTests.cs`.
+
+- **Objetivo:** Probar la lógica de un servicio de envío de correos, sin enviar un correo real.
+- **Técnica:** Usar Moq para simular la dependencia externa (ej. un cliente SMTP).
+
+```csharp
+using Xunit;
+using Moq;
+using BlazorServer.Services; // Interfaz IEmailService
+
+public class EmailServiceTests
+{
+    [Fact]
+    public void SendEmail_ShouldCallSmtpClientSend()
+    {
+        // 1. Arrange (Preparación)
+        var mockSmtpClient = new Mock<ISmtpClient>(); // Moq simula el cliente SMTP
+        var emailService = new EmailService(mockSmtpClient.Object);
+        var recipient = "test@example.com";
+        var subject = "Test";
+
+        // 2. Act (Acción)
+        emailService.SendEmail(recipient, subject, "Body");
+
+        // 3. Assert (Verificación)
+        // Verificar que el método 'Send' del cliente simulado fue llamado exactamente una vez
+        mockSmtpClient.Verify(
+            client => client.Send(recipient, subject, "Body"), 
+            Times.Once());
+    }
+}
+```
+
+
+
+#### B. Ejemplo de Prueba de Componente (bUnit)
+
+
+
+En `BlazorServer.Tests/Components/HomeTests.cs`.
+
+- **Objetivo:** Probar que un componente Blazor se renderiza correctamente y que su comportamiento es el esperado.
+- **Técnica:** Usar el `TestContext` de bUnit para renderizar y manipular el componente.
+
+C#
+
+```
+using Bunit;
+using Xunit;
+using BlazorServer.Pages; // Asume que el componente Home.razor está en Pages
+
+public class HomeTests : TestContext
+{
+    [Fact]
+    public void HomePage_RendersCorrectly()
+    {
+        // Arrange
+        // (No necesitamos mocks si solo probamos el renderizado simple)
+
+        // Act: Renderiza el componente
+        var cut = RenderComponent<Home>(); 
+
+        // Assert: Verifica el contenido HTML
+        cut.MarkupMatches("<h1>Hello, world!</h1>..."); // Reemplazar con el contenido real
+    }
+
+    [Fact]
+    public void CounterComponent_IncrementsOnButtonClick()
+    {
+        // Act: Renderiza el componente Counter
+        var cut = RenderComponent<Counter>(); 
+        
+        // Assert: Verifica el estado inicial
+        cut.Find("p").MarkupMatches("<p role=\"status\">Current count: 0</p>");
+        
+        // Act: Haz clic en el botón
+        cut.Find("button").Click();
+        
+        // Assert: Verifica el nuevo estado después del clic
+        cut.Find("p").MarkupMatches("<p role=\"status\">Current count: 1</p>");
+    }
+}
+```
+
+
+
+#### 
+
+## 6. Deployment to Azure
 
 1 - Publicar una versión de release:
 

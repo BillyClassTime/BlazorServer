@@ -3,22 +3,39 @@ using Microsoft.Extensions.Options;
 using Microsoft.Graph;
 using Microsoft.Graph.Models;
 using Microsoft.Graph.Users.Item.SendMail;
+using BlazorServer.Services.Interfaces;
+using BlazorServer.Configuration.Interfaces;
+using BlazorServer.Configuration;
 
-
-public class EmailServiceGraph
+namespace BlazorServer.Services;
+public class EmailGraphService : IEmailGraphService
 {
-    private readonly AzureAdGraphSettings _cfg;
+    private readonly IEntraIdGraphSettings _cfg;
+    private readonly ILogger<EmailGraphService> _log;
 
-    public EmailServiceGraph(IOptions<AzureAdGraphSettings> options)
+    public EmailGraphService(IOptions<EntraIdGraphSettings> options,
+                             ILogger<EmailGraphService> log)
     {
         _cfg = options.Value;
+        _log = log;
+        if (string.IsNullOrEmpty(_cfg.Sender) || string.IsNullOrEmpty(_cfg.TenantId))
+        {
+            _log.LogError("Configuración de EntraIdGraphSettings incompleta o faltante. No se podrá enviar el correo.");
+        }
     }
 
     public async Task SendAsync(string to, string subject, string body)
     {
         // 1. Crear credenciales con Azure.Identity
+        _log.LogInformation("Intentando enviar correo a: {To} con asunto: {Subject}", to, subject);
+        if (string.IsNullOrEmpty(_cfg.Sender))
+        {
+            _log.LogError("Error fatal: la dirección del remitente (Sender) no esta configurada");
+            throw new InvalidOperationException("La configuración del remitene es obligatoria");
+        }
+
         var credential = new ClientSecretCredential(
-            _cfg.TenantId,
+            _cfg!.TenantId,
             _cfg.ClientId,
             _cfg.ClientSecret);
 
@@ -61,7 +78,8 @@ public class EmailServiceGraph
             }
         };
 
-        Console.WriteLine($"Enviando correo desde {_cfg.Sender}" );
+        _log!.LogInformation("Enviando correo desde {Email}", _cfg.Sender);
+        
         // 4. Enviar el correo de recepción
         await graphClient.Users[_cfg.Sender].SendMail
             .PostAsync(new SendMailPostRequestBody
@@ -78,12 +96,4 @@ public class EmailServiceGraph
                 SaveToSentItems = true
             });
     }
-}
-
-public class AzureAdGraphSettings
-{
-    public string? TenantId { get; set; }
-    public string? ClientId { get; set; }
-    public string? ClientSecret { get; set; }
-    public string? Sender { get; set; }
 }

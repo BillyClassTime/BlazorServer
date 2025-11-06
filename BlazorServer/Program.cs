@@ -1,5 +1,9 @@
+using BlazorServer.Configuration.Interfaces;
+using BlazorServer.Infrastructure.Interfaces;
+using BlazorServer.Infrastructure;
 using BlazorServer.Services.Interfaces;
 using BlazorServer.Services;
+using BlazorServer.Configuration;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,10 +12,8 @@ builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddScoped<ICaptchaService, CaptchaService>();
 builder.Services.AddSingleton<IAppVersionInfo, AppVersionInfo>();
-builder.Services.Configure<AzureAdGraphSettings>(builder.Configuration.GetSection("AzureAdGraphSettings"));
-builder.Services.AddTransient<EmailServiceGraph>();
-Console.WriteLine("SMTP User desde config: " + builder.Configuration["AzureAdGraphSettings:Sender"]);
-
+builder.Services.Configure<EntraIdGraphSettings>(builder.Configuration.GetSection("EntraIdGraphSettings"));
+builder.Services.AddTransient<IEmailGraphService, EmailGraphService>();
 
 var app = builder.Build();
 

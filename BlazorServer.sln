@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.5.2.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlazorServer", "BlazorServer.csproj", "{BE385CC5-7E71-ADC7-3F65-CDB1E59817DF}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlazorServer", "BlazorServer\BlazorServer.csproj", "{BE385CC5-7E71-ADC7-3F65-CDB1E59817DF}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlazorServer.Tests", "BlazorServer.Tests\BlazorServer.Tests.csproj", "{D5559B67-A940-43A3-B518-20227CC08DCF}"
 EndProject

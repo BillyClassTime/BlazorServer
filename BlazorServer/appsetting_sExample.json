@@ -6,10 +6,10 @@
       "Microsoft.AspNetCore": "Warning"
     }
   },
-  "AzureAdGraphSettings": {
+  "EntraIdGraphSettings": {
     "ClientId": "AQUI VA TU CLIENT ID",
     "TenantId": "AQUI",
-    "ClientSecret": "Aqui el client de la app registrada en azure",
+    "ClientSecret": "Aqui el client de la app registrada en azure Entra ID",
     "Sender": "el email del usuario que va a enviar los correos"
   },
   "AllowedHosts": "*",

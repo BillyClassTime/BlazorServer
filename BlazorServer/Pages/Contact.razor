@@ -5,7 +5,7 @@
 @using Microsoft.Extensions.Logging
 @inject ILogger<Contact> Logger
 @inject ICaptchaService CaptchaService
-@inject EmailServiceGraph EmailServiceGraph
+@inject IEmailGraphService EmailGraphService
 <!-- Contact-->
 <section class="page-section masthead" id="contacto">
     <div class="container px-4 px-lg-5">
@@ -122,7 +122,7 @@
 
         try
         {
-            await EmailServiceGraph.SendAsync(
+            await EmailGraphService.SendAsync(
             to: formData.Email!,
             "Nuevo mensaje",
             $"Enviado desde:{formData.Email!}\n{formData.Name}\n{formData.Phone} \n{formData.Message!}"

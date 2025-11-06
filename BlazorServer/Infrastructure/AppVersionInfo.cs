@@ -1,6 +1,6 @@
 using System.Reflection;
-using BlazorServer.Services.Interfaces;
-namespace BlazorServer.Services;
+using BlazorServer.Infrastructure.Interfaces;
+namespace BlazorServer.Infrastructure;
 public class AppVersionInfo : IAppVersionInfo
 {
     private static readonly string _buildFileName = ".buildinfo.json";
