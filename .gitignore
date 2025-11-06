@@ -107,6 +107,7 @@ ipch/
 
 # Visual Studio Trace Files
 *.e2e
+!BlazorServer.E2E/
 
 # TFS 2012 Local Workspace
 $tf/
