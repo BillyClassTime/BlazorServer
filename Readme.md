@@ -181,6 +181,16 @@ Plan para mejorar la organización y cumplir SOLID:
 - [x] **Crear un ViewModel**: Usar un modelo para el formulario y delegar la validación.
 - [x] **Mantener el componente Razor solo para UI y coordinación**.
 
+## Instrumentando la aplicación
+
+Instrumentar la aplicación y cumplir con buenas prácticas en .NET 9 y C# 13.
+
+Usamos el nuevo logging integrado en lugar de `Console.WriteLine`. Inyectamos `ILogger<Contact>` en los componente y registrar los mensajes con el nivel adecuado.
+
+- Usar `Log.LogInformation` para eventos informativos y `Log.LogError` para errores.
+- El tipo `ILogger<NOMBRECOMPONENTERAZOR>` se inyecta automáticamente por DI.
+- El nombre del componente (`Contact`) debe coincidir con el nombre de tu clase Razor.
+
 ## Deployment to Azure
 
 1 - Publicar una versión de release:
