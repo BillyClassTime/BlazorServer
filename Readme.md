@@ -25,13 +25,11 @@
 
 
 
-No termino de entender:
+### Entendiendo `_Host.cshtml`
 
 `_Host.cshtml` es donde tenemos el <html><body></body></html> que incluye en `App` para que todas las siguientes páginas rendericen alli. (Y se conversve un estilo único en toda la web app),
 
-pero en `Shared\MainLayout.razor` y en `Shared\NavMenu.razor` como se enlazan con `_Host.cshtml`?
-
-
+ `Shared\MainLayout.razor` y en `Shared\NavMenu.razor` se enlazan con `_Host.cshtml` asi:
 
 ```html
 <!-- Navigation-->
@@ -113,8 +111,6 @@ pero en `Shared\MainLayout.razor` y en `Shared\NavMenu.razor` como se enlazan co
        </div>
    </footer>
 
-  
-
 ```
 
 ### NavBar
@@ -174,6 +170,17 @@ output.Content.SetHtmlContent($" via build {appVersionInfo.BuildNumber}");
 			output.Content.SetHtmlContent($"< a href = 'https://dev.azure.com/BillyClassTime/BillyClassTimeBlog/_build/results?buildId={appVersionInfo.BuildId} &view=results' > {appVersionInfo.BuildNumber} </ a >");
 ```
 
+## Refactorizar para cumplimiento SOLID
+
+Se ha detectado que la mayor lógica de negocio la lleva el componente `Contact.razor` pues recibe los dato para contactar, se valida, se realiza un `Captcha`y se envía el correo de confirmación y de almacenamiento de la solicitud.
+
+Plan para mejorar la organización y cumplir SOLID:
+
+- [x] **Separar la lógica de negocio**: Extraer la lógica de captcha y envío de correo a servicios independientes.
+- [x] **Crear un servicio de Captcha**: Encapsular la generación y validación del captcha.
+- [x] **Crear un ViewModel**: Usar un modelo para el formulario y delegar la validación.
+- [x] **Mantener el componente Razor solo para UI y coordinación**.
+
 ## Deployment to Azure
 
 1 - Publicar una versión de release:
@@ -205,6 +212,5 @@ az webapp deployment source config-zip --resource-group SpainRG --name bmspa2024
 o 
 
 az webapp deploy --resource-group SpainRG --name bmspa2024 --src-path ./publish.zip
-
 ```
 

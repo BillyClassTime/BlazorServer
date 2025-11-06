@@ -6,6 +6,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
+builder.Services.AddScoped<ICaptchaService, CaptchaService>();
 builder.Services.AddSingleton<IAppVersionInfo, AppVersionInfo>();
 builder.Services.Configure<AzureAdGraphSettings>(builder.Configuration.GetSection("AzureAdGraphSettings"));
 builder.Services.AddTransient<EmailServiceGraph>();

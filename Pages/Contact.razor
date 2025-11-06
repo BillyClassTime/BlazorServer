@@ -1,5 +1,8 @@
 @using BlazorServer.Services
+@using BlazorServer.Models
 @using System.ComponentModel.DataAnnotations
+@using BlazorServer.Services.Interfaces
+@inject ICaptchaService CaptchaService
 @inject EmailServiceGraph EmailServiceGraph
 <!-- Contact-->
 <section class="page-section masthead" id="contacto">
@@ -47,7 +50,8 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label text-light">@formData.CaptchaQuestion</label>
-                        <input type="text" class="form-control bg-dark text-light border-secondary" @bind="formData.UserAnswer" />
+                        <input type="text" class="form-control bg-dark text-light border-secondary"
+                            @bind="formData.UserAnswer" />
                         <div class="form-text text-light">Resuelve la operación para confirmar que no eres un bot.</div>
                         @if (!string.IsNullOrEmpty(captchaError))
                         {
@@ -55,7 +59,7 @@
                         }
                         else
                         {
-                            <div class="" ></div>
+                            <div class=""></div>
                         }
                     </div>
                     <div class="d-grid">
@@ -83,85 +87,54 @@
 </section>
 
 @code {
-    private FormData formData = new();
+    private FormDataModel formData = new();
     private string? captchaError;
     private string? statusMessage;
     private bool messageSent = false;
 
+    protected override void OnInitialized()
+    {
+        SetNewCaptcha();
+    }
+
+    private void SetNewCaptcha()
+    {
+        var (question, answer) = CaptchaService.Generate();
+        formData.CaptchaQuestion = question;
+        formData.CaptchaAnswer = answer;
+        formData.UserAnswer = String.Empty;
+    }
+
     public async Task HandleSubmit()
     {
-        // marcar que se ha enviado el mensaje para deshabilitar el botón
         messageSent = true;
-        // 1) Validación del captcha
-        if (!int.TryParse(formData.UserAnswer, out var userValue) || userValue != formData.CaptchaAnswer)
+
+        if (!CaptchaService.Validate(formData.UserAnswer, formData.CaptchaAnswer))
         {
             captchaError = "Captcha incorrecto. Inténtalo de nuevo.";
-            // Regenerar nueva pregunta para evitar reintentos automáticos
-            GenerateCaptcha();
+            SetNewCaptcha();
             StateHasChanged();
             messageSent = false; // permitir reintento
             return;
         }
 
-        // si captcha error no es null, dejarlo como null, si no, mantener el valor
-        captchaError = captchaError == null ? null : captchaError;
-
-        try {
-            // Aquí decides qué hacer: enviar correo, guardar en fichero, etc.
-            // await EmailService.SendAsync(formData.Email!, "Nuevo mensaje", formData.Message!);
-            await EmailServiceGraph.SendAsync(to: formData.Email!,"Nuevo mensaje",$"Enviado desde: {formData.Email!} \n {formData.Name} \n{formData.Phone} \n {formData.Message!}");
-            formData = new FormData(); // reset form
+        try
+        {
+            await EmailServiceGraph.SendAsync(
+            to: formData.Email!,
+            "Nuevo mensaje",
+            $"Enviado desde:{formData.Email!}\n{formData.Name}\n{formData.Phone} \n{formData.Message!}"
+            );
+            formData = new FormDataModel(); // reset form
             statusMessage = "Mensaje enviado correctamente. Gracias por contactar con nosotros.";
-            GenerateCaptcha(); // nueva pregunta captcha    
-            captchaError = null; // limpiar error captcha si lo había
-            
+            SetNewCaptcha();
         }
         catch (Exception ex)
         {
             statusMessage = "Error enviando el mensaje. Por favor, inténtalo de nuevo más tarde.";
             Console.WriteLine("Error enviando el correo: " + ex.Message);
         }
-    
+
     }
-
-    public class FormData
-    {
-        [Required] public string? Name { get; set; }
-        [Required, EmailAddress] public string? Email { get; set; }
-        [Required] public string? Phone { get; set; }
-        [Required] public string? Message { get; set; }
-
-        // Captcha
-        public string CaptchaQuestion { get; set; } = "";
-        public int CaptchaAnswer { get; set; }  // la respuesta correcta
-        public string UserAnswer { get; set; } = ""; // lo que escribe el usuario
-    }
-
-     protected override void OnInitialized()
-    {
-        GenerateCaptcha();
-    }
-
-private void GenerateCaptcha()
-{
-    var rnd = new Random();
-    var a = rnd.Next(2, 9);
-    var b = rnd.Next(2, 9);
-    var op = rnd.Next(0, 2); // 0 suma, 1 resta
-
-    if (op == 0)
-    {
-        formData.CaptchaQuestion = $"¿Cuánto es {a} + {b}?";
-        formData.CaptchaAnswer = a + b;
-    }
-    else
-    {
-        if (a < b) (a, b) = (b, a); // evitar negativos
-        formData.CaptchaQuestion = $"¿Cuánto es {a} - {b}?";
-        formData.CaptchaAnswer = a - b;
-    }
-
-    formData.UserAnswer = "";
-}
 
 }

@@ -1,0 +1,18 @@
+{
+  "DetailedErrors": true,
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "AzureAdGraphSettings": {
+    "ClientId": "AQUI VA TU CLIENT ID",
+    "TenantId": "AQUI",
+    "ClientSecret": "Aqui el client de la app registrada en azure",
+    "Sender": "el email del usuario que va a enviar los correos"
+  },
+  "AllowedHosts": "*",
+  "GitHubCommitUrl": "https://github.com/BillyClassTime/DomoticaBrotonsPL",
+  "AzureDevopsBuildUrl": "https://dev.azure.com/AppAutomotive/AppCarStar/"
+}
