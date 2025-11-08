@@ -275,7 +275,7 @@ En la solución Blazor (`BlazorServer.sln`),  se añade dos proyectos nuevos:
 
 ```powershell
 dotnet new xunit -n BlazorServer.Tests
-dotnet new mstest -n BlazorServer.E2E   # aunque aquí usaremos Playwright, se puede usar xUnit también
+dotnet new xunit -n BlazorServer.E2E   # aunque aquí usaremos Playwright, se puede usar xUnit también
 ```
 
 Después, ajusta nombres para mantener la convención:
@@ -324,7 +324,7 @@ Para las pruebas End-to-End, usaremos el *binding* de Playwright para .NET.
 
 | **Paquete**                                                  | **Propósito**                                                | **Comando a Ejecutar**                                       |
 | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
-| `Microsoft.Playwright.MSTest` o `Microsoft.Playwright.NUnit` | Playwright para .NET (usa su propio test runner o se integra con xUnit, NUnit, o MSTest). | `dotnet add BlazorServer.E2E package Microsoft.Playwright.NUnit --version 1.41.2` (Usaremos NUnit como base de E2E por su simplicidad con Playwright, si usaste `mstest` inicialmente, podemos usar el *runner* de MSTest también). |
+| `Microsoft.Playwright.MSTest` o `Microsoft.Playwright.xUnit` | Playwright para .NET (usa su propio test runner o se integra con xUnit, NUnit, o MSTest). | `dotnet add BlazorServer.E2E package Microsoft.Playwright.NUnit --version 1.41.2` (Usaremos xUnit como base de E2E por su simplicidad con Playwright, si se ha usado `mstest` inicialmente, podemos usar el *runner* de MSTest también). |
 
 Resumen de los comandos
 
@@ -351,7 +351,7 @@ dotnet add BlazorServer.Tests reference BlazorServer/BlazorServer.csproj
 dotnet add BlazorServer.E2E reference BlazorServer/BlazorServer.csproj
 ```
 
-## 5. Desarrollando las pruebas
+## 5. Desarrollando las pruebas Unitarias
 
 ### 5.1 Enfoque y Metodología de Pruebas
 
@@ -614,7 +614,108 @@ public class ComponenteConJSRuntimeTests
 2. **ACT**: Renderizar el componente que interactúa con `JSRuntime`.
 3. **ASSERT**: Verificar que el componente haya invocado la función de JavaScript correctamente.
 
-## 6. Deployment to Azure
+## 6. Desarrollo de las pruebas de integración
+
+El propósito principal de estas pruebas fue validar el comportamiento de la página **BlazorServer**, asegurando que la navegación, interacción con formularios y manejo de elementos dinámicos como el **cookie banner** y el **captcha** funcionaran correctamente. Las pruebas cubrieron la carga de la página, la navegación entre secciones, la validación de formularios y la visualización de mensajes de error.
+
+### 6.1 Herramientas Utilizadas
+
+Siguiendo el objetivo del Plan de pruebas se usaron:
+
+- **Playwright**: Framework de automatización para pruebas de aplicaciones web, utilizado para interactuar con los elementos de la página, realizar clics, completar formularios, y esperar elementos dentro de las pruebas.
+- **xUnit**: Framework de pruebas unitarias para .NET, usado para organizar, ejecutar y verificar los resultados de las pruebas automatizadas, con la integración de **Assertions** para validar comportamientos esperados.
+
+### 6.2 Pruebas Realizadas
+
+#### 6.2.1 Verificación del Título de la Página (Test de Navegación Básica):
+
+**Objetivo:** Validar la carga correcta del título de la página y comprobar la navegación entre secciones.
+
+**Acciones realizadas:** Verificación de que el título de la página coincida con el esperado, validando diferencias de acentos y mayúsculas/minúsculas. Además, se probaron las transiciones de navegación entre las secciones de la página.
+
+- Se verificó que el título de la página coincidiera con el esperado ("Domótica Brotons"), utilizando un comparador que ignorara diferencias de acentos y mayúsculas/minúsculas.
+
+#### 6.2.2 Prueba de Navegación Entre Secciones
+
+- Se simuló la navegación entre diferentes secciones de la página, comprobando que al hacer clic en los enlaces, el contenido de cada sección se cargara correctamente.
+
+#### 6.2. 3 Prueba del Cookie Banner
+
+- Se validó que el banner de cookies apareciera correctamente en la página, y se probó la interacción con él (como aceptar las cookies). Se verificó que una vez aceptado, el banner ya no apareciera en futuras interacciones dentro de la misma sesión, simulando el comportamiento esperado para una correcta UX.
+
+#### 6.2.4 Formulario de Contacto - Envío con Captcha No Completado
+
+- Se rellenaron los campos del formulario (nombre, email, mensaje) sin resolver el captcha y se comprobó que el formulario no se enviara. Además, se validó que se mostrara el mensaje de error correspondiente, indicando que el captcha debía ser resuelto.
+
+### 6.3 Problemas Encontrados y Soluciones
+
+#### 6.3.1 Comparación de Cadenas
+
+- Hubo un problema inicial con la comparación de cadenas en el título de la página debido a diferencias de codificación. Se solucionó utilizando `StringComparer.OrdinalIgnoreCase` para una comparación robusta que no tuviera en cuenta las diferencias de tildes ni mayúsculas/minúsculas.
+
+#### 6.3.2 Visibilidad de Elementos
+
+- Durante la prueba de interacción con los campos de texto del formulario, algunos elementos no estaban visibles o accesibles de inmediato. Esto se solucionó utilizando técnicas de espera explícita (`WaitForSelectorAsync`) para asegurarse de que los elementos estuvieran completamente cargados antes de interactuar con ellos.
+
+#### 6.3.3 Manejo del Captcha
+
+- El manejo del captcha fue un desafío, especialmente para verificar el error cuando no se resolvía. Se implementaron esperas para detectar el mensaje de error correctamente, y se validó que el sistema no permitiera enviar el formulario sin completar el captcha.
+
+#### 6.3.4 Interacción con el Cookie Banner
+
+- El cookie banner fue probado para verificar que apareciera al inicio y que se pudiera aceptar correctamente, evitando que se mostrara en futuras interacciones dentro de la misma sesión. Esto garantizó que la experiencia del usuario fuera consistente con el comportamiento esperado.
+
+### 6.4 Correcciones y Mejoras Realizadas
+
+6.4.1 Normalización de Texto
+
+- Se corrigió la comparación de cadenas en la validación del título de la página, usando técnicas de normalización para manejar diferencias de caracteres especiales.
+
+6.4.2 Sincronización de Elementos
+
+- Se aseguraron las interacciones con los campos de entrada y botones mediante el uso de esperas explícitas para garantizar que los elementos estuvieran visibles y disponibles antes de realizar cualquier acción.
+
+6.4.3 Manejo de Errores del Captcha
+
+- Se mejoró la gestión del captcha para garantizar que el mensaje de error solo se verificara cuando el captcha no estuviera resuelto, evitando falsos positivos y asegurando una correcta validación.
+
+6.4.4 Cookie Banner - Aceptación y Persistencia
+
+- Se implementó la verificación del comportamiento del banner de cookies, validando que este se ocultara después de ser aceptado y no apareciera nuevamente en la misma sesión.
+
+### 6.5 Ejecución de los casos de prueba
+
+#### 6.5.1 Ejecucón de la prueba de navegación entre sesiones
+
+```powershell
+dotnet test --filter "FullyQualifiedName~BlazorServer.E2E.Navegation.PlaywrightTests.Navigation_ShouldWorkCorrectly_BetweenSections"
+```
+
+#### 6.5.2 Ejecución de la prueba navegación básica
+
+```powershell
+dotnet test --filter "FullyQualifiedName~BlazorServer.E2E.Navegation.PlaywrightTests.Page_ShouldLoad_AllComponentsCorrectly"
+```
+
+#### 6.5.3 Ejecución de la prueba del Banner de los cookies
+
+```powershell
+dotnet test --filter "FullyQualifiedName~BlazorServer.E2E.Navegation.PlaywrightTests.CookieBanner_ShouldBeVisible_WhenPageLoads"
+```
+
+#### 6.5.4 Ejecución de la prueba del Captcha
+
+```powershell
+dotnet test --filter "FullyQualifiedName~BlazorServer.E2E.Navegation.PlaywrightTests.ContactForm_ShouldNotSend_WhenCaptchaNotCompleted"
+```
+
+#### 6.5.5 Lista de los casos de pruebas
+
+```powershell
+dotnet test --list-tests
+```
+
+## 7. Deployment to Azure
 
 1 - Publicar una versión de release:
 
