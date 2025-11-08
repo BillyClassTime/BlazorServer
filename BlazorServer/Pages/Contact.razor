@@ -109,7 +109,7 @@
 
     public async Task HandleSubmit()
     {
-        messageSent = true;
+        messageSent = true; 
 
         if (!CaptchaService.Validate(formData.UserAnswer, formData.CaptchaAnswer))
         {
@@ -127,10 +127,10 @@
             "Nuevo mensaje",
             $"Enviado desde:{formData.Email!}\n{formData.Name}\n{formData.Phone} \n{formData.Message!}"
             );
-            formData = new FormDataModel(); // reset form
             statusMessage = "Mensaje enviado correctamente. Gracias por contactar con nosotros.";
             SetNewCaptcha();
             Logger.LogInformation("Contacto form submitted successfully by {Email}", formData.Email);
+            formData = new FormDataModel(); // reset form
         }
         catch (Exception ex)
         {

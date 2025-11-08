@@ -12,6 +12,7 @@ builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddScoped<ICaptchaService, CaptchaService>();
 builder.Services.AddSingleton<IAppVersionInfo, AppVersionInfo>();
+builder.Services.AddSingleton<IGraphClientWrapper, GraphClientWrapper>();
 builder.Services.Configure<EntraIdGraphSettings>(builder.Configuration.GetSection("EntraIdGraphSettings"));
 builder.Services.AddTransient<IEmailGraphService, EmailGraphService>();
 

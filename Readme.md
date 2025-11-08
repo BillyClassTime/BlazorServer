@@ -1,4 +1,4 @@
-# Desarrollo de una aplicación Blazor desde cero
+Desarrollo de una aplicación Blazor desde cero
 
 ## 1. Estrategia preliminar
 
@@ -231,7 +231,7 @@ BlazorServer.Tests/
 │
 ├── Services/       # Pruebas de servicios (Captcha, Email, etc.)
 ├── Models/         # Pruebas de modelos y validaciones
-├── Components/     # Pruebas de componentes Blazor (Contact, Home, etc.)
+├── Components/     # Pruebas de componentes Razor (Contact, Home, etc.)
 │   └── ContactTests.cs
 │   └── HomeTests.cs
 │   └── ...
@@ -353,95 +353,106 @@ dotnet add BlazorServer.E2E reference BlazorServer/BlazorServer.csproj
 
 ## 5. Desarrollando las pruebas
 
-### 5.1 Probar los Servicios (xUnit + Moq)
+### 5.1 Enfoque y Metodología de Pruebas
 
-En `BlazorServer.Tests/Services/EmailServiceTests.cs`.
+La metodología adoptada prioriza la **Inversión de Dependencias (DIP)** para aislar la lógica de negocio de la infraestructura. El enfoque se divide en:
 
-- **Objetivo:** Probar la lógica de un servicio de envío de correos, sin enviar un correo real.
-- **Técnica:** Usar Moq para simular la dependencia externa (ej. un cliente SMTP).
+1. **Pruebas Unitarias de Servicios:** Verifican la lógica de las clases *back-end* (ej. `EmailGraphService`) sin infraestructura real, utilizando **Moq**. 
+2. **Pruebas de Componentes:** Verifican el flujo de trabajo (`.razor`) usando **bUnit** para simular la interacción del usuario y confirmar que el componente interactúa correctamente con los servicios simulados.
+
+### 5.2 Resultado caso de pruebas 1
+
+Servicio probado: `EmailGraphService`
+
+#### 5.2.1. Principio Evaluado: Inversión de Dependencias (DIP)
+
+| **Objetivo Evaluado**              | **Implementación en la Prueba**                              | **¿Cómo se verifica?**                                       |
+| ---------------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
+| **Aislamiento de Infraestructura** | Se inyectó el *mock* de `IGraphClientWrapper` en el constructor de `EmailGraphService`. | La prueba ejecutó el método `SendAsync` **sin errores de red** (`System.ArgumentNullException` desapareció), confirmando que la lógica de Azure fue totalmente ignorada. |
+| **Testabilidad**                   | El `EmailGraphService` dependía de la interfaz `IGraphClientWrapper` en lugar de la clase concreta `GraphClientWrapper`. | El uso de `_mockGraphClient.Object` permitió que el flujo de ejecución fuera desviado a nuestro simulador de Moq. |
+
+
+
+#### 5.2.2. Lógica de Negocio Evaluada: Envío Dual de Correo
+
+| **Objetivo Evaluado**       | **Implementación en la Prueba**                              | **Código de Verificación Clave**                             |
+| --------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
+| **Lógica de Envío Doble**   | El código de negocio requiere enviar el correo del **contacto** y el correo de **confirmación** al remitente. | Se verificó que el método `SendMailAsync` del cliente simulado fue llamado dos veces. |
+| **Integridad de los Datos** | Se verificó que el servicio usó la configuración (`_settings.Sender`) correctamente como remitente de las llamadas a Graph. | El método `Verify` usa el remitente falso configurado en el *Arrange*. |
+
+#### 5.2.3. Implementación de las Herramientas
+
+| **Herramienta**   | **Rol en la Prueba**                 | **Implementación Específica**                                |
+| ----------------- | ------------------------------------ | ------------------------------------------------------------ |
+| **xUnit**         | Framework de pruebas.                | Define el método como un caso de prueba ejecutable con el atributo `[Fact]`. |
+| **Moq**           | Framework de simulación (*Mocking*). | Se usó `new Mock<IGraphClientWrapper>()` para crear un objeto falso que registra las llamadas. |
+| **`IOptions<T>`** | Simulación de la Configuración.      | Se usó `Options.Create(_settings)` para crear un objeto real `IOptions<T>` que contiene los datos de configuración necesarios para el servicio. |
+
+#### 5.2.4 Extracto del resultado
+
+##### Test Unitario: Validación de Lógica de Negocio del Servicio de Correo
+
+**Clase de Prueba:** `EmailGraphServiceTests`
+**Método de Prueba:** `SendAsync_ShouldCallGraphClientExactlyTwiceForTwoMessages`
+
+**Objetivo del Test:**
+Verificar que la clase `EmailGraphService` ejecuta correctamente su lógica de negocio de envío doble (correo principal del contacto y correo de confirmación al remitente), sin depender de la red de Azure o Microsoft Graph.
+
+**Implementación de la Testabilidad:**
+Para aislar el servicio de la infraestructura, se implementó el Patrón de Abstracción de Dependencias:
+1.  Se creó la interfaz `IGraphClientWrapper` y su mock (`_mockGraphClient`).
+2.  El constructor de `EmailGraphService` fue refactorizado para inyectar `IGraphClientWrapper`.
+
+**Verificación (Assert):**
+La prueba utiliza Moq para asegurar que el método de envío simulado (`SendMailAsync`) fue invocado **exactamente dos veces**, lo que confirma la lógica de negocio de la aplicación:
 
 ```csharp
-using Xunit;
-using Moq;
-using BlazorServer.Services; // Interfaz IEmailService
-
-public class EmailServiceTests
-{
-    [Fact]
-    public void SendEmail_ShouldCallSmtpClientSend()
-    {
-        // 1. Arrange (Preparación)
-        var mockSmtpClient = new Mock<ISmtpClient>(); // Moq simula el cliente SMTP
-        var emailService = new EmailService(mockSmtpClient.Object);
-        var recipient = "test@example.com";
-        var subject = "Test";
-
-        // 2. Act (Acción)
-        emailService.SendEmail(recipient, subject, "Body");
-
-        // 3. Assert (Verificación)
-        // Verificar que el método 'Send' del cliente simulado fue llamado exactamente una vez
-        mockSmtpClient.Verify(
-            client => client.Send(recipient, subject, "Body"), 
-            Times.Once());
-    }
-}
+// El mock verifica que el flujo interno del EmailGraphService haya invocado la abstracción 2 veces.
+_mockGraphClient.Verify(
+    x => x.SendMailAsync(
+        _settings.Sender!, 
+        It.IsAny<Message>()), 
+    Times.Exactly(2)
+);
 ```
 
+**Resultado:**
+
+La prueba se completó con éxito (Succeeded), confirmando que la lógica de negocio es correcta e inmune a fallos de red o configuración externa.
+
+### 5.3 Resultado caso de pruebas 2
+
+Componente probado: `Contact.Razor`
+
+#### 5.3.1. Principio Evaluado: Testabilidad de Componentes e Integración de Servicios
+
+| Objetivo Evaluado                  | Implementación en la Prueba                                  | Cómo se verifica                                             |
+| ---------------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
+| **Aislamiento de Infraestructura** | Se inyectó el **Mock** de `IEmailGraphService` y el **Fake** de `ICaptchaService` en el `TestContext`. | La prueba ejecutó el `HandleSubmit` asíncrono sin dependencias de la red o fallos de inicialización (`NullReferenceException`). |
+| **Integridad del Flujo Asíncrono** | Se usó `Returns(Task.CompletedTask)` en el *mock* y `await cut.Find("form").SubmitAsync()`. | Se confirmó, mediante `cut.WaitForState()`, que la interfaz de usuario se actualiza **después** de que la tarea asíncrona simulada termina. |
+| **Validación del `Captcha`**       | Se creó el **`FakeCaptchaService`** para devolver una respuesta predecible (`"14"`), asegurando que el flujo de la prueba siempre entrara en la rama de éxito. | Se verificó que el *mock* de correo se llama, probando que la validación `!Validate()` fue exitosa. |
+
+#### 5.3.2. Lógica de Negocio Evaluada: Envío de Correo (Contacto)
+
+| Objetivo Evaluado             | Implementación en la Prueba                                  | Código de Verificación Clave                                 |
+| ----------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
+| **Integridad de Datos**       | Se simularon *inputs* en los campos (`#name`, `#email`, etc.) con `cut.Find("#id").Change(value)`. | La prueba utiliza `_mockEmailService.Verify` para asegurar que el **cuerpo del correo** se construye correctamente con todos los datos del formulario. |
+| **Control de Llamada**        | Verificar que el servicio de correo solo se llama al pasar la validación y el Captcha. | `_mockEmailService.Verify(x => x.SendAsync(...), Times.Once())` |
+| **Respuesta de Usuario (UX)** | Verificar que el mensaje de éxito se muestre en el DOM.      | `cut.WaitForState(() => cut.Markup.Contains("Mensaje enviado correctamente..."));` |
+
+#### 5.3.3 Patrones de Prueba de `bUnit` Utilizados
+
+| Patrón de `bUnit`                                        | Rol en la Prueba                       | Justificación de Uso                                         |
+| -------------------------------------------------------- | -------------------------------------- | ------------------------------------------------------------ |
+| **Herencia de Clase C#** (`ContactTests : TestContext`)  | Permite el *Setup* del entorno.        | **CRUCIAL:** Se utilizó este patrón (en lugar del patrón básico `@code`) porque es el único que permite **configurar y registrar los `mocks` y `fakes` en el contenedor de Inyección de Dependencias** antes de que el componente sea renderizado. |
+| **Ajuste de Timeout** (`TestContext.DefaultWaitTimeout`) | Estabilización del entorno de pruebas. | Se configuró el tiempo de espera a 10 segundos para evitar fallos de sincronización (`WaitForFailedException`) en entornos lentos, garantizando que el *assert* asíncrono tenga tiempo suficiente para resolver el `await`. |
+| **Interacción con Formularios** (`SubmitAsync`)          | Simulación de la acción del usuario.   | `await cut.Find("form").SubmitAsync()` es la forma más limpia y directa de disparar el evento `OnValidSubmit` del componente Blazor, asegurando que se omite el detalle de si el botón está o no deshabilitado. |
+
+#### 5.3.4 Resultado Final
+
+Todas las pruebas de componentes y servicios se completaron con **éxito (Succeeded)**, confirmando la correcta integración de los servicios, el flujo asíncrono y la gestión de la lógica de negocio y la UX.
 
 
-#### B. Ejemplo de Prueba de Componente (bUnit)
-
-
-
-En `BlazorServer.Tests/Components/HomeTests.cs`.
-
-- **Objetivo:** Probar que un componente Blazor se renderiza correctamente y que su comportamiento es el esperado.
-- **Técnica:** Usar el `TestContext` de bUnit para renderizar y manipular el componente.
-
-C#
-
-```
-using Bunit;
-using Xunit;
-using BlazorServer.Pages; // Asume que el componente Home.razor está en Pages
-
-public class HomeTests : TestContext
-{
-    [Fact]
-    public void HomePage_RendersCorrectly()
-    {
-        // Arrange
-        // (No necesitamos mocks si solo probamos el renderizado simple)
-
-        // Act: Renderiza el componente
-        var cut = RenderComponent<Home>(); 
-
-        // Assert: Verifica el contenido HTML
-        cut.MarkupMatches("<h1>Hello, world!</h1>..."); // Reemplazar con el contenido real
-    }
-
-    [Fact]
-    public void CounterComponent_IncrementsOnButtonClick()
-    {
-        // Act: Renderiza el componente Counter
-        var cut = RenderComponent<Counter>(); 
-        
-        // Assert: Verifica el estado inicial
-        cut.Find("p").MarkupMatches("<p role=\"status\">Current count: 0</p>");
-        
-        // Act: Haz clic en el botón
-        cut.Find("button").Click();
-        
-        // Assert: Verifica el nuevo estado después del clic
-        cut.Find("p").MarkupMatches("<p role=\"status\">Current count: 1</p>");
-    }
-}
-```
-
-
-
-#### 
 
 ## 6. Deployment to Azure
 

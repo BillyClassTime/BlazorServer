@@ -1,81 +1,87 @@
-using Xunit;
-using Moq;
-using Microsoft.Extensions.Options;
+using BlazorServer.Configuration;
+using BlazorServer.Models;            
+using BlazorServer.Services;           // EmailGraphService, GraphClientWrapper
+using BlazorServer.Services.Interfaces; // IEmailGraphService, IGraphClientWrapper
 using Microsoft.Extensions.Logging;
-using BlazorServer.Services.Interfaces; // IEmailGraphService está aquí
-using BlazorServer.Services;
-using BlazorServer.Configuration;            // Donde está la clase EmailGraphService
+using Microsoft.Extensions.Options;
+using Microsoft.Graph.Models;
+using Moq;
+using Xunit;
 
 public class EmailGraphServiceTests
 {
-    // Usaremos un Mock para el ILogger<T>
     private readonly Mock<ILogger<EmailGraphService>> _mockLogger;
-    
+    private readonly Mock<IGraphClientWrapper> _mockGraphClient;
+    private readonly EntraIdGraphSettings _settings;
+    private readonly IOptions<EntraIdGraphSettings> _mockOptions;
+
+    // Configuración de las dependencias que serán inyectadas
     public EmailGraphServiceTests()
     {
-        // Inicializar el Mock de ILogger una sola vez.
-        // ILogger<T> es muy fácil de simular porque no tiene métodos complejos que necesitemos programar.
         _mockLogger = new Mock<ILogger<EmailGraphService>>();
+        _mockGraphClient = new Mock<IGraphClientWrapper>();
+
+        // 1. Configuración Falsa (ARRANGE GLOBAL)
+        _settings = new EntraIdGraphSettings
+        {
+            Sender = "sistema@fakesender.com",
+            TenantId = "fake-tenant-id",
+            ClientId = "fake-client-id",
+            ClientSecret= "fake-client-secret"
+        };
+        _mockOptions = Options.Create(_settings);
     }
 
     [Fact]
-    public async Task SendAsync_ShouldLogInformationOnSuccess()
+    public async Task SendAsync_ShouldCallGraphClientExactlyTwiceForTwoMessages()
     {
-        // 1. Arrange (Preparación de las dependencias)
-
-        // a) Preparar la configuración usando Moq y IOptions<T>
-        var settings = new EntraIdGraphSettings
-        {
-            TenantId = "fake-tenant-id",
-            ClientId = "fake-client-id",
-            ClientSecret = "fake-client-secret",
-            Sender = "sender@fakecompany.com"
-        };
-
-        // Creamos una implementación real de IOptions<T> que envuelve nuestra configuración falsa.
-        var mockOptions = Options.Create(settings); 
-
-        // b) Preparar el Logger (ya inicializado en el constructor de la prueba)
-        // No necesitamos programarlo a menos que queramos verificar que se llamó a LogInformation().
-
-        // c) Instanciar el servicio bajo prueba, pasando las dependencias:
-        var emailService = new EmailGraphService(
-            mockOptions,          // Provee la configuración (IOptions<T>)
-            _mockLogger.Object    // Provee el logger simulado (ILogger<T>)
+        // ARRANGE
+        // Instanciamos el servicio, inyectando las dependencias simuladas
+        var service = new EmailGraphService(
+            _mockOptions,
+            _mockLogger.Object,
+            _mockGraphClient.Object // <--- ¡La clave!
         );
 
-        var recipient = "test@user.com";
-        var subject = "Test Subject";
-        var body = "Test Body";
+        var recipient = "usuario@test.com";
+        var subject = "Consulta de prueba";
+        var body = "Este es un mensaje de prueba para el mock.";
 
-        // 2. Act (Acción)
-        // Nota: El método SendAsync de tu servicio es asíncrono.
-        await emailService.SendAsync(recipient, subject, body); 
+        // ACT
+        await service.SendAsync(recipient, subject, body);
 
-        // 3. Assert (Verificación)
-
-        // Lo que realmente se debería probar en esta capa:
-        // * Que se registra (LogInformation) el inicio del envío.
-        // * Que se lanzó una excepción si la configuración es nula.
-        // * Que se construyeron los objetos de correo Message/SendMailPostRequestBody correctamente.
-
-        // Ejemplo de verificación de log:
-        // Verifica que se llamó a LogInformation al menos una vez, 
-        // con el nivel y el mensaje de log esperado (requiere una sintaxis compleja con Moq.Es.IsAny)
-
-        // Por ejemplo, verificar que se llamó al menos una vez al logger:
-        _mockLogger.Verify(
-            x => x.Log(
-                LogLevel.Information,
-                It.IsAny<EventId>(),
-                It.IsAny<It.IsAnyType>(),
-                It.IsAny<Exception?>(),
-                (Func<It.IsAnyType, Exception?, string>)It.IsAny<object>()),
-            Times.AtLeastOnce());
-
-        // NOTA: No podemos probar la interacción con Microsoft Graph ni Azure.Identity 
-        // porque no los estamos simulando (mockeando). 
-        // Para simular el flujo de Graph, tendrías que inyectar una interfaz para 
-        // el GraphServiceClient (ej. IGraphServiceClientWrapper) en lugar de crearlo internamente.
+        // ASSERT
+        // Verificamos que el método SendMailAsync del mock fue llamado 2 veces.
+        // La prueba es exitosa si el servicio llamó a su cliente dos veces, 
+        // ¡probando tu lógica de negocio de envío doble!
+        _mockGraphClient.Verify(
+            x => x.SendMailAsync(
+                _settings.Sender!, // El remitente configurado
+                It.IsAny<Message>()), // Cualquier objeto Message
+            Times.Exactly(2)
+        );
     }
+
+    [Fact]
+    public async Task SendAsync_FirstCallShouldContainOriginalSubject()
+    {
+        // ARRANGE
+        var service = new EmailGraphService(_mockOptions, _mockLogger.Object, _mockGraphClient.Object);
+        var originalSubject = "Asunto Único del Cliente";
+
+        // ACT
+        await service.SendAsync("a@b.com", originalSubject, "body");
+
+        // ASSERT
+        // Verificamos que el MOCK recibió una llamada con el asunto original.
+        // Aquí usamos una función de predicado (It.Is<...>) para inspeccionar el objeto Message que recibió el mock.
+        _mockGraphClient.Verify(
+            x => x.SendMailAsync(
+                _settings.Sender!,
+                It.Is<Message>(msg => msg.Subject == originalSubject)), // Inspección
+            Times.Once()
+        );
+    }
+
+    // Aquí añadiremos más pruebas, como verificar que el LogInformation se llama
 }
