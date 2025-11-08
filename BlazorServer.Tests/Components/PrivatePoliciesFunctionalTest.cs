@@ -80,24 +80,87 @@ public class PrivatePoliciesFunctionalTests : TestContext
 
 public class MockJSRuntime : IJSRuntime
 {
-    public List<(string method, object[] args)> InvokedMethods { get; } = new List<(string method, object[] args)>();
+    // Almacenamos los métodos invocados
+    public List<(string method, object[] args)> InvokedMethods { get; } = [];
 
-    public ValueTask<TValue> InvokeAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.PublicProperties)] TValue>(string identifier, object?[]? args)
+    // Implementación de InvokeAsync<TValue>
+    public ValueTask<TValue> InvokeAsync<TValue>(string identifier, object?[]? args)
     {
-        throw new NotImplementedException();
+        // Guardamos el método y los argumentos invocados para verificar más tarde
+        InvokedMethods.Add((identifier, (args ?? Array.Empty<object>()) as object[]));
+
+        // Retornar el tipo por defecto para TValue
+        return new ValueTask<TValue>(default(TValue)!);
     }
 
-    public ValueTask<TValue> InvokeAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.PublicProperties)] TValue>(string identifier, CancellationToken cancellationToken, object?[]? args)
+    // Implementación de InvokeVoidAsync
+    public ValueTask InvokeVoidAsync(string identifier, object?[]? args)
     {
-        throw new NotImplementedException();
+        // Guardamos el método y los argumentos invocados para verificar más tarde
+        InvokedMethods.Add((identifier, (args ?? []) as object[]));
+
+        // Retorno vacío
+        return ValueTask.CompletedTask;
     }
 
-    public Task InvokeVoidAsync(string identifier, object[] args)
+    // Implementación de InvokeAsync con CancellationToken (para completar la interfaz)
+    public ValueTask<TValue> InvokeAsync<TValue>(string identifier, CancellationToken cancellationToken, object?[]? args)
     {
-        // Capturamos las llamadas al método
-        InvokedMethods.Add((identifier, args));
-        return Task.CompletedTask;  // Simula la respuesta de InvokeVoidAsync
-    }
+        // Guardamos el método y los argumentos invocados para verificar más tarde
+        InvokedMethods.Add((identifier, (args ?? Array.Empty<object>()) as object[]));
 
+        // Simulamos un retorno vacío para métodos que no devuelven valor
+        return new ValueTask<TValue>(default(TValue)!);
+    }
 }
+
+
+//public class MockJSRuntime : IJSRuntime
+//{
+//    // Almacenamos los métodos invocados
+//    public List<(string method, object[] args)> InvokedMethods { get; } = new List<(string method, object[] args)>();
+
+//    // Implementación de InvokeAsync<TValue>
+//    public ValueTask<TValue> InvokeAsync<TValue>(string identifier, object?[]? args)
+//    {
+//        // Guardamos el método y los argumentos invocados para verificar más tarde
+//        InvokedMethods.Add((identifier, args ?? new object[0]));
+//        //InvokedMethods.Add((identifier, args ?? []));
+
+//        // Simulamos un retorno vacío para métodos que no devuelven valor
+//        return new ValueTask<TValue>(default!);
+//    }
+
+//    // Implementación de InvokeVoidAsync
+//    public ValueTask InvokeVoidAsync(string identifier, object[] args)
+//    {
+//        // Guardamos el método y los argumentos invocados para verificar más tarde
+//        InvokedMethods.Add((identifier, args));
+
+//        // Retorno vacío
+//        return ValueTask.CompletedTask;
+//    }
+
+//    // Implementación completa del método InvokeAsync con CancellationToken
+//    public ValueTask<TValue> InvokeAsync<TValue>(string identifier, CancellationToken cancellationToken, object?[]? args)
+//    {
+//        // Guardamos el método y los argumentos invocados para verificar más tarde
+//        InvokedMethods.Add((identifier, args ?? new object[0]));
+
+//        // Simulamos un retorno vacío para métodos que no devuelven valor
+//        return new ValueTask<TValue>(default!);
+//    }
+
+//    // Método adicional para completar la implementación de IJSRuntime
+//    public ValueTask<TValue> InvokeAsync<TValue>(string identifier, object[] args, CancellationToken cancellationToken)
+//    {
+//        // Guardamos el método y los argumentos invocados para verificar más tarde
+//        InvokedMethods.Add((identifier, args));
+
+//        // Simulamos un retorno vacío para métodos que no devuelven valor
+//        return new ValueTask<TValue>(default!);
+//    }
+//}
+
+
 
