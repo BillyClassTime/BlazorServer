@@ -3,7 +3,7 @@ using Xunit;
 
 namespace BlazorServer.E2E.Navegation;
 
-public class PlaywrightTests : IDisposable
+public partial class PlaywrightTests 
 {
     private readonly IPage _page;
     private readonly IBrowser _browser;
@@ -20,7 +20,7 @@ public class PlaywrightTests : IDisposable
     public async Task CookieBanner_ShouldBeVisible_WhenPageLoads()
     {
         // Navegar a la página principal
-        await _page.GotoAsync("https://localhost:5001");
+        await _page.GotoAsync("http://localhost:5000");
 
         // Verificar que el banner de cookies esté presente
         var cookiesBanner = await _page.QuerySelectorAsync(".alert.alert-dark");
@@ -31,15 +31,4 @@ public class PlaywrightTests : IDisposable
         Xunit.Assert.True(isVisible); // El banner debería ser visible al cargar la página
     }
 
-    // Método Dispose() ahora es privado para cumplir con las convenciones de xUnit
-    private void Dispose()
-    {
-        _page?.CloseAsync().Wait();
-        _browser?.CloseAsync().Wait();
-    }
-
-    void IDisposable.Dispose()
-    {
-        Dispose();
-    }
 }
