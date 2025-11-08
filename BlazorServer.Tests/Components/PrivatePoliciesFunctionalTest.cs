@@ -1,28 +1,29 @@
 ﻿using BlazorServer.Pages;
 using Bunit;
+using Xunit;
+
+namespace BlazorServer.Tests.Components;
 
 public class PrivatePoliciesFunctionalTests : TestContext
 {
     [Theory]
-    [InlineData("1. Qué información recogemos", "collect")]
-    [InlineData("2. Cómo procesamos tu información", "process")]
-    [InlineData("3. Con quién compartimos tu información", "share")]
-    [InlineData("9. ¿Cómo contactarnos?", "contact")]
-    [InlineData("10. ¿Cómo revisar, actualizar o eliminar tus datos?", "review-update-delete")]
-    public void AnchorClicks_ShouldInvokeJsRuntimeToNavigate(string visibleText, string expectedAnchorId)
+    [InlineData("collect")]
+    [InlineData("process")]
+    [InlineData("share")]
+    [InlineData("contact")]
+    [InlineData("review-update-delete")]
+    public void AnchorClicks_ShouldInvokeJsRuntimeToNavigate(string expectedAnchorId)
     {
-        // Arrange: renderizar el componente
+        // ARRANGE: configurar JSInterop para aceptar la llamada
+        JSInterop.SetupVoid("navigateToAnchor", _ => true);
+
         var cut = RenderComponent<PrivatePolicies>();
 
-        // Act: localizar el enlace por texto visible
-        var elementToClick = cut.FindAll("li.list-group-item a")
-                                .FirstOrDefault(e => e.TextContent.Contains(expectedAnchorId));
+        // ACT: buscar el enlace por el id esperado
+        var elementToClick = cut.Find($"a[href='#{expectedAnchorId}']");
+        elementToClick.Click();
 
-
-        Assert.NotNull(elementToClick); // prueba de contenido
-        elementToClick.Click();         // dispara el evento
-
-        // Assert: verificar la invocación JS
+        // ASSERT: verificar que se invocó JSInterop con el id correcto
         var inv = JSInterop.VerifyInvoke("navigateToAnchor");
         Assert.Equal(expectedAnchorId, inv.Arguments[0]?.ToString());
     }
