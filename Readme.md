@@ -400,6 +400,7 @@ Verificar que la clase `EmailGraphService` ejecuta correctamente su lógica de n
 
 **Implementación de la Testabilidad:**
 Para aislar el servicio de la infraestructura, se implementó el Patrón de Abstracción de Dependencias:
+
 1.  Se creó la interfaz `IGraphClientWrapper` y su mock (`_mockGraphClient`).
 2.  El constructor de `EmailGraphService` fue refactorizado para inyectar `IGraphClientWrapper`.
 
@@ -452,7 +453,166 @@ Componente probado: `Contact.Razor`
 
 Todas las pruebas de componentes y servicios se completaron con **éxito (Succeeded)**, confirmando la correcta integración de los servicios, el flujo asíncrono y la gestión de la lógica de negocio y la UX.
 
+### 5.4 **Componentes y Casos de Prueba**
 
+Resumen de componentes y pruebas realizadas
+
+| **Componente**              | **Archivo de prueba**        | Tipo de prueba   |
+| --------------------------- | ---------------------------- | ---------------- |
+| `Host.cshtml`               | `HostTest.cs`                | **PID**          |
+| `Contact.razor`             | `ContactTest.cs`             | **PCJS** **PID** |
+| `Domotica.razor`            | `DomoticaTest.cs`            | **PB**           |
+| `DomoticaDigitalHome.razor` | `DomoticaDigitalHomeTest.cs` | **PCJS**         |
+| `EsquemaContratacion.razor` | `EsquemaContratacionTest.cs` | **PB**           |
+| `Inmotica.razor`            | `InmoticaTest.cs`            | **PB**           |
+| `PoliticaCookies.razor`     | `PoliticaCookiesTest.cs`     | **PB**           |
+| `Precios.razor`             | `PreciosTest.cs`             | **PB**           |
+| `PrivatePolicies.razor`     | `PrivatePoliciesTest.cs`     | **PCJS**         |
+| `QuienesSomos.razor`        | `QuienesSomosTest.cs`        | **PB**           |
+| `Servicios.razor`           | `ServiciosTest.cs`           | **PB**           |
+| `Term.razor`                | `TermTest.cs`                | **PB**           |
+| `Ventajas.razor`            | `VentajasTest.cs`            | **PB**           |
+
+Esta tabla te permite ver de un vistazo qué pruebas corresponden a qué componentes.
+
+### 5.5 **Detalles de las Pruebas**
+
+- **Pruebas Básicas (PB)**: Validación de que el componente se renderiza correctamente sin dependencias.
+- **Pruebas con Inyección de Dependencias (PID)**: Configuración de servicios inyectados y validación del renderizado.
+- **Pruebas con `JSRuntime` (PCJS)**: Simulación de `JSRuntime` para probar componentes que interactúan con JavaScript.
+
+#### 5.5.1 **Pruebas Básicas (Sin Inyección de Dependencias)**
+
+Este tipo de prueba está destinado a los componentes que no requieren servicios inyectados. Es una prueba sencilla que verifica que el componente se renderiza correctamente y contiene el contenido esperado.
+
+**Plantilla para pruebas básicas utilizada:**
+
+```
+using Bunit;
+using Xunit;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Moq;
+using BlazorServer.Pages;  // Asegúrarse de cambiar el namespace al del propio componente
+
+namespace BlazorServer.Tests.Components;
+
+public class ComponenteXTests
+{
+    [Fact]
+    public void ComponenteX_ShouldRenderWithoutErrors()
+    {
+        // ARRANGE: Inicializar el contexto de bUnit
+        using var ctx = new TestContext(); 
+        
+        // 1. Si ComponenteX inyecta ILogger<ComponenteX>, descomenta la siguiente línea:
+        // ctx.Services.AddSingleton(Mock.Of<ILogger<ComponenteX>>()); 
+
+        // 2. ACT: Renderizar el componente.
+        var cut = ctx.RenderComponent<ComponenteX>(); 
+
+        // 3. ASSERT: Verificar que el renderizado fue exitoso (Smoke Test).
+        Assert.NotNull(cut.Markup);
+        
+        // 4. ASSERT: Verificación de contenido para asegurar que es el componente correcto.
+        Assert.Contains("Texto Clave Único de ComponenteX", cut.Markup); 
+    }
+}
+```
+
+#### Pasos clave:
+
+1. **ARRANGE**: Inicialización de `TestContext` para configurar el entorno de prueba.
+2. **ACT**: Renderización del componente con `RenderComponent`.
+3. **ASSERT**: Validación de que el componente se ha renderizado sin errores y contiene el texto esperado.
+
+#### 5.5.2 **Pruebas para Componentes con Inyección de Dependencias**
+
+Si el componente depende de servicios inyectados, como `ILogger<T>`, `IService`, o cualquier otra dependencia, se debe configurar el contenedor de servicios (`TestContext.Services`) antes de renderizar el componente.
+
+**Ejemplo:**
+
+```
+using Bunit;
+using Xunit;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Moq;
+using BlazorServer.Pages;  // Asegúrarse de cambiar el namespace al propio componente
+
+namespace BlazorServer.Tests.Components;
+
+public class ComponenteConDependenciasTests
+{
+    [Fact]
+    public void ComponenteConDependencias_ShouldRenderWithInjectedServices()
+    {
+        // ARRANGE: Inicializar el contexto de bUnit
+        using var ctx = new TestContext();
+
+        // Inyectar servicios como ILogger o cualquier otro servicio necesario.
+        ctx.Services.AddSingleton(Mock.Of<ILogger<ComponenteConDependencias>>()); 
+
+        // ACT: Renderizar el componente.
+        var cut = ctx.RenderComponent<ComponenteConDependencias>(); 
+
+        // ASSERT: Verificar que el componente se renderiza correctamente
+        Assert.NotNull(cut.Markup);
+        Assert.Contains("Texto esperado", cut.Markup);  // Verifica un texto único o algo que debe estar en el DOM.
+    }
+}
+```
+
+#### Pasos clave:
+
+1. **ARRANGE**: Agregar las dependencias necesarias al contenedor de servicios (por ejemplo, `ILogger`, `IService`, etc.).
+2. **ACT**: Renderizar el componente.
+3. **ASSERT**: Verificar que el componente se renderiza correctamente y contiene el contenido esperado.
+
+#### 5.5.3 **Pruebas para Componentes con `JSRuntime`**
+
+Cuando un componente depende de `JSRuntime` para ejecutar código JavaScript (por ejemplo, invocar funciones de JavaScript desde Blazor), se debe simular o "mockear" el comportamiento de `IJSRuntime` para probar la funcionalidad sin ejecutar realmente JavaScript.
+
+**Ejemplo de uso con `JSRuntime` simulado:**
+
+```
+using Bunit;
+using Xunit;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.JSInterop;
+using Moq;
+using BlazorServer.Pages;  // Asegúrate de cambiar el namespace a tu propio componente
+
+namespace BlazorServer.Tests.Components;
+
+public class ComponenteConJSRuntimeTests
+{
+    [Fact]
+    public void ComponenteConJSRuntime_ShouldCallJSFunction()
+    {
+        // ARRANGE: Inicializar el contexto de bUnit y simular IJSRuntime.
+        using var ctx = new TestContext();
+        
+        // Simular el comportamiento de JSRuntime
+        var mockJsRuntime = new Mock<IJSRuntime>();
+        mockJsRuntime.Setup(js => js.InvokeVoidAsync(It.IsAny<string>(), It.IsAny<object[]>()))
+                     .ReturnsAsync(ValueTask.CompletedTask);
+        ctx.Services.AddSingleton(mockJsRuntime.Object);  // Inyectar el mock de JSRuntime
+
+        // ACT: Renderizar el componente.
+        var cut = ctx.RenderComponent<ComponenteConJSRuntime>();
+
+        // ASSERT: Verificar que la función de JavaScript fue llamada correctamente
+        mockJsRuntime.Verify(js => js.InvokeVoidAsync(It.IsAny<string>(), It.IsAny<object[]>()), Times.Once);
+    }
+}
+```
+
+#### Pasos clave:
+
+1. **ARRANGE**: Simular `JSRuntime` usando Moq y configurarlo para devolver un valor.
+2. **ACT**: Renderizar el componente que interactúa con `JSRuntime`.
+3. **ASSERT**: Verificar que el componente haya invocado la función de JavaScript correctamente.
 
 ## 6. Deployment to Azure
 
