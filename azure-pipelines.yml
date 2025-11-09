@@ -1,0 +1,56 @@
+# ----------------------------------------------------------------------
+# CI Pipeline (Build) - Genera el artefacto
+# ----------------------------------------------------------------------
+trigger:
+- main 
+
+variables:
+  buildConfiguration: 'Release'
+  artifactName: 'drop' # Nombre del artefacto de salida
+
+stages:
+- stage: CI_BuildAndTest
+  displayName: '1. Build, Pruebas y Empaquetado'
+  jobs:
+  - job: Build
+    pool:
+      vmImage: 'windows-latest'
+    steps:
+    
+    # 1. Restore de dependencias
+    - task: DotNetCoreCLI@2
+      displayName: 'dotnet restore'
+      inputs:
+        command: 'restore'
+        projects: '**/*.csproj'
+
+    # 2. Ejecutar Pruebas Unitarias y de Componentes
+    - task: DotNetCoreCLI@2
+      displayName: 'dotnet test (Unitarias y Componentes)'
+      inputs:
+        command: 'test'
+        projects: '**/DomoticaBrotons.Tests.csproj'
+        arguments: '--configuration $(buildConfiguration)'
+        
+    # 3. Ejecutar Pruebas E2E (Playwright)
+    - task: DotNetCoreCLI@2
+      displayName: 'dotnet test (Pruebas E2E Playwright)'
+      inputs:
+        command: 'test'
+        projects: '**/DomoticaBrotons.E2E.csproj' 
+        arguments: '--configuration $(buildConfiguration)' 
+
+    # 4. Publicar y Empaquetar
+    - task: DotNetCoreCLI@2
+      displayName: 'dotnet publish'
+      inputs:
+        command: 'publish'
+        publishWebProjects: true
+        arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)'
+
+    # 5. Publicar los artefactos (La salida del CI para el CD)
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publicar Artefactos (drop)'
+      inputs:
+        PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+        ArtifactName: '$(artifactName)'
