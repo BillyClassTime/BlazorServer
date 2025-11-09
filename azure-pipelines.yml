@@ -22,14 +22,16 @@ stages:
       displayName: 'dotnet restore'
       inputs:
         command: 'restore'
-        projects: '**/*.csproj'
+        # Usamos el patrón genérico, asumiendo que el .sln está en la raíz
+        projects: '**/*.sln' 
 
     # 2. Ejecutar Pruebas Unitarias y de Componentes
     - task: DotNetCoreCLI@2
       displayName: 'dotnet test (Unitarias y Componentes)'
       inputs:
         command: 'test'
-        projects: '**/DomoticaBrotons.Tests.csproj'
+        # RUTA CORREGIDA: Busca el archivo .csproj dentro de la carpeta BlazorServer.Tests/
+        projects: '**/BlazorServer.Tests/*.csproj' 
         arguments: '--configuration $(buildConfiguration)'
         
     # 3. Ejecutar Pruebas E2E (Playwright)
@@ -37,7 +39,8 @@ stages:
       displayName: 'dotnet test (Pruebas E2E Playwright)'
       inputs:
         command: 'test'
-        projects: '**/DomoticaBrotons.E2E.csproj' 
+        # RUTA CORREGIDA: Busca el archivo .csproj dentro de la carpeta BlazorServer.E2E/
+        projects: '**/BlazorServer.E2E/*.csproj' 
         arguments: '--configuration $(buildConfiguration)' 
 
     # 4. Publicar y Empaquetar
@@ -46,6 +49,8 @@ stages:
       inputs:
         command: 'publish'
         publishWebProjects: true
+        # Aseguramos que se publique el proyecto BlazorServer/BlazorServer.csproj
+        projects: 'BlazorServer/BlazorServer.csproj'
         arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)'
 
     # 5. Publicar los artefactos (La salida del CI para el CD)
