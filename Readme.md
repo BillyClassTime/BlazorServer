@@ -694,7 +694,7 @@ dotnet test --filter "FullyQualifiedName~BlazorServer.E2E.Navegation.PlaywrightT
 #### 6.5.2 Ejecución de la prueba navegación básica
 
 ```powershell
-dotnet test --filter "FullyQualifiedName~BlazorServer.E2E.Navegation.PlaywrightTests.Page_ShouldLoad_AllComponentsCorrectly"
+dotnet test BlazorServer.E2E --filter "FullyQualifiedName~BlazorServer.E2E.Navegation.PlaywrightTests.Page_ShouldLoad_AllComponentsCorrectly"
 ```
 
 #### 6.5.3 Ejecución de la prueba del Banner de los cookies
@@ -715,7 +715,80 @@ dotnet test --filter "FullyQualifiedName~BlazorServer.E2E.Navegation.PlaywrightT
 dotnet test --list-tests
 ```
 
-## 7. Deployment to Azure
+## 7. Construcción del la integración continua
+
+### 7.1 Construcción del Pipeline de CI Azure DevOps
+
+**CI: Build, Test y Empaquetado (Azure DevOps YAML)**
+
+**Objetivo:**
+ Construir, ejecutar pruebas unitarias, pruebas de componentes y pruebas E2E, empaquetar la aplicación Blazor Server y publicar artefactos listos para CD.
+
+------
+
+#### **Trigger**
+
+- Se ejecuta automáticamente en los siguientes branches:
+  - `main`
+  - `fix/ci-e2e`
+
+------
+
+#### **Variables**
+
+- `buildConfiguration`: `Release` → Configuración de compilación.
+- `artifactName`: `drop` → Nombre del artefacto de salida.
+
+------
+
+#### **Stages y Jobs**
+
+**Stage: `CI_BuildAndTest`**
+
+- Nombre visible: `1. Build, Pruebas y Empaquetado`
+
+**Job: `Build`**
+
+- **Pool:** `windows-latest`
+
+**Steps:**
+
+1. **Restaurar dependencias .NET**
+   - `dotnet restore` para todos los `.sln` del repositorio.
+2. **Renombrar configuración de appsettings**
+   - Si `appsettings.json` no existe y `appsetting_sExample.json` sí, se renombra automáticamente.
+3. **Pruebas Unitarias y de Componentes**
+   - `dotnet test` en proyecto `BlazorServer.Tests`
+   - Configuración: `Release`
+4. **Compilar proyecto E2E**
+   - `dotnet build` en proyecto `BlazorServer.E2E`
+5. **Instalación de Playwright**
+   - Instala herramienta global `Microsoft.Playwright.CLI` y binarios de navegador necesarios.
+6. **Arrancar Blazor Server en background**
+   - Permite que las pruebas E2E accedan a `http://localhost:5000`.
+7. **Esperar disponibilidad del servidor**
+   - Hasta 20 intentos con 5s de espera entre ellos.
+   - Se requiere 3 respuestas consecutivas HTTP 200 para continuar.
+8. **Ejecutar pruebas E2E con Playwright**
+   - `dotnet test` en `BlazorServer.E2E`
+9. **Detener servidor Blazor** (Cleanup)
+   - `taskkill /F /IM dotnet.exe /T`
+   - Se ejecuta siempre, incluso si las pruebas fallan.
+10. **Publicar aplicación**
+    - `dotnet publish` de `BlazorServer` en carpeta de staging de artefactos.
+11. **Publicar artefactos**
+    - Carpeta de salida: `$(Build.ArtifactStagingDirectory)`
+    - Nombre del artefacto: `drop`
+
+------
+
+**Notas técnicas:**
+
+- CI incluye pruebas unitarias, de componentes y E2E para asegurar la calidad antes de desplegar.
+- Se asegura que el servidor esté activo y estable antes de ejecutar E2E.
+- Uso de PowerShell y CmdLine para tareas de preparación y cleanup.
+
+## 8. Deployment to Azure
 
 1 - Publicar una versión de release:
 
