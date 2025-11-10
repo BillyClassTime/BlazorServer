@@ -13,6 +13,6 @@
     "Sender": "el email del usuario que va a enviar los correos"
   },
   "AllowedHosts": "*",
-  "GitHubCommitUrl": "https://github.com/BillyClassTime/DomoticaBrotonsPL",
-  "AzureDevopsBuildUrl": "https://dev.azure.com/AppAutomotive/AppCarStar/"
+  "GitHubCommitUrl": "https://github.com/BillyClassTime/BlazorServer",
+  "AzureDevopsBuildUrl": "https://dev.azure.com/BillyClassTime/Brotons%20Domotica/"
 }

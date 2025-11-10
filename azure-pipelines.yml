@@ -58,6 +58,29 @@ stages:
           projects: '**/BlazorServer.E2E/*.csproj'
           arguments: '--configuration $(buildConfiguration)'
 
+      - task: PowerShell@2
+        displayName: 'Generar .buildinfo.json con build real'
+        inputs:
+          targetType: 'inline'
+          script: |
+            # Variables de Azure DevOps
+            $BuildNumber = "$(Build.BuildNumber)"  # primera línea: build real
+            $BuildId = "$(Build.BuildId)"          # segunda línea: build id real
+
+            # Ruta del archivo .buildinfo.json al lado del appsettings.json
+            $FilePath = "BlazorServer\.buildinfo.json"
+
+            Write-Host "Generando .buildinfo.json en: $FilePath"
+            Write-Host "BuildNumber: $BuildNumber"
+            Write-Host "BuildId: $BuildId"
+
+            # Línea 1 → BuildNumber real
+            # Línea 2 → BuildId real
+            $BuildNumber | Out-File $FilePath -Encoding UTF8
+            $BuildId | Out-File $FilePath -Append -Encoding UTF8
+
+            Write-Host ".buildinfo.json generado correctamente con build real."
+
       # Install Playwright browser binaries
       - task: CmdLine@2
         displayName: 'Playwright: Install Browser Binaries'
@@ -104,8 +127,6 @@ stages:
 
           if ($successCount -lt $requiredSuccesses) {
               Write-Host "ERROR: El servidor no respondió 3 veces consecutivas en $maxAttempts intentos."
-              $pidT = $env:BlazorServerPID
-              if ($pidT) { Stop-Process -Id $pidT -Force }
               exit 1
           }
         displayName: 'Esperar servidor: 20 intentos, 5s entre cada uno, 3 respuestas consecutivas'
@@ -134,4 +155,3 @@ stages:
         inputs:
           PathtoPublish: '$(Build.ArtifactStagingDirectory)'
           ArtifactName: '$(artifactName)'
-

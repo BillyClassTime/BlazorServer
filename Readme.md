@@ -1,4 +1,11 @@
-Desarrollo de una aplicación Blazor desde cero
+# Desarrollo de una aplicación Blazor desde cero
+
+Desde la idea inicial hasta ci/cd y despligue en Azure
+
+| Pipeline                      | Estado                                                       |
+| ----------------------------- | ------------------------------------------------------------ |
+| **Integración Continua (CI)** |![](https://dev.azure.com/BillyClassTime/Brotons%20Domotica/_apis/build/status%2FBillyClassTime.BlazorServer?branchName=main)                                                 |
+| **Entrega Continua (CD)**     | ![](https://vsrm.dev.azure.com/BillyClassTime/_apis/public/Release/badge/7d0a1726-0e57-4da9-8fcb-706cf8fafdfe/1/1) |
 
 ## 1. Estrategia preliminar
 
@@ -715,7 +722,7 @@ dotnet test --filter "FullyQualifiedName~BlazorServer.E2E.Navegation.PlaywrightT
 dotnet test --list-tests
 ```
 
-## 7. Construcción del la integración continua
+## 7. CI - Construcción del la integración continua
 
 ### 7.1 Construcción del Pipeline de CI Azure DevOps
 
@@ -788,36 +795,26 @@ dotnet test --list-tests
 - Se asegura que el servidor esté activo y estable antes de ejecutar E2E.
 - Uso de PowerShell y CmdLine para tareas de preparación y cleanup.
 
-## 8. Deployment to Azure
+### 8. CD - Construcción del despliegue continuo
 
-1 - Publicar una versión de release:
+Implementar una pipeline de **Entrega Continua (CD)** que despliegue la aplicación Blazor en el Azure App Service (`bmspa2024`) e inyecte dinámicamente cuatro secretos críticos (credenciales de Entra ID y correo electrónico del remitente) desde el **Azure Key Vault** (`bmspa2024-kv-prod`).
 
-```powershell
-dotnet publish --configuration Release --output ./publish
-```
+El sistema de CI/CD para la aplicación se ha configurado para garantizar la seguridad de las credenciales y la automatización del despliegue en el entorno de producción (`bmspa2024.azurewebsites.net`).
 
-2 - Empaquetar la publicación
+### 8.1 Mecanismo de Seguridad de Secretos (Key Vault Integration)
 
-```powershell
-cd publish
-zip -r ../publish.zip .
-o 
-Compress-Archive -Path ./publish/* -DestinationPath ./publish.zip
-```
+Todas las credenciales sensibles (incluyendo el Client ID, Tenant ID y Client Secret de Entra ID) se gestionan a través de **Azure Key Vault** (`bmspa2024-kv-prod`) y nunca se almacenan en la pipeline de Azure DevOps.
 
-3 - Conectar con Azure
+- **Identidad de Despliegue:** La pipeline utiliza una **Entidad de Servicio** con permisos de sólo **lectura de secretos (`Get, List`)** en el Key Vault.
+- **Flujo de Secretos:** Los secretos se inyectan en la pipeline en tiempo de ejecución mediante la tarea **`Azure Key Vault`** (en lugar de la Library de variables), lo que garantiza la compatibilidad total con la configuración de permisos de Azure.
+- **Inyección de Configuración:** Las variables se inyectan en el App Service como `App Settings` utilizando la **convención de variables de entorno de .NET (`__`)** para garantizar que la aplicación pueda leer la configuración jerárquica:
+  - `EntraIdGraphSettings__ClientId`
+  - `EntraIdGraphSettings__ClientSecret`
 
-```powershell
-az login
-```
+### 8.2 Estado de la Pipeline
 
-4 - Desplegar en un `App Service` y `Resource Group` existente
+El despliegue ha sido probado y verificado:
 
-```powershell
-az webapp deployment source config-zip --resource-group SpainRG --name bmspa2024 --src ./publish.zip
-
-o 
-
-az webapp deploy --resource-group SpainRG --name bmspa2024 --src-path ./publish.zip
-```
-
+- **CI:** Compilación exitosa del artefacto.
+- **CD:** Despliegue automatizado, lectura de secretos y aplicación de configuraciones funcionales.
+- **Resultado:** Aplicación Blazor operativa en producción con autenticación Entra ID activa.
